@@ -81,20 +81,28 @@ Then, inside your agent:
 All design artifacts live in `.prism/` at the repo root — **git-excluded automatically**,
 it's local working state, never committed.
 
-## A 10-second tour
+## Inside a drilled node
 
-**1. `prism init` detects your agents.** Tools with dot-dirs in the project (`.claude/`, `.cursor/`…)
-are found and pre-selected; already-installed ones are marked. Toggle anything else you want:
+`/prism:drill` takes **one part** and brings it to atomic. Here's what that looks like for a
+`01-token-bucket` node of a rate-limiter change — three artifacts carry the weight:
 
-<p align="center"><img src="assets/select-toggled.png" width="640" alt="Tool selection: detected agents are pre-checked, cursor on Codex CLI just toggled on"></p>
+**`node.md` — the unit of review.** 5-7 lines. You react to *this*, not to a design doc:
 
-**2. Commands install with live progress** — one file per workflow command, per tool:
+<p align="center"><img src="assets/drill-node.png" width="680" alt="node.md: What / Logic / Guarantees / Input-output digest, status, open questions"></p>
 
-<p align="center"><img src="assets/installing.png" width="640" alt="Live install progress: conventions and Claude Code done, Cursor at 3/8 with a progress bar"></p>
+**`concept.drawio` — a real diagram, not ASCII art.** The agent hand-crafts mxGraph XML and
+validates it with `xmllint`. Open it in draw.io or the VS Code extension:
 
-**3. Done — your agents now speak PRISM.** The same `.prism/` state is shared by every tool:
+<p align="center"><img src="assets/drill-concept.png" width="760" alt="concept.drawio: request flows through middleware to Limiter.Allow, lazy refill, allow/deny branches"></p>
 
-<p align="center"><img src="assets/done.png" width="640" alt="Install finished: 8 commands per tool, hint to run /prism:propose"></p>
+**`signatures.md` — the API before any code.** Signatures + what/why comments, no implementation.
+Catch a bad interface here, where changing it costs nothing:
+
+<p align="center"><img src="assets/drill-signatures.png" width="680" alt="signatures.md: Limiter interface, Decision struct, bucket internals with rationale comments"></p>
+
+Plus `spec.md` (Requirement/Scenario — they drive the tests later) and `tasks.md` (the checklist
+`apply` executes). If a node turns out too big — drill redirects to `decompose` instead of
+patching on the fly.
 
 ## What you get per change
 

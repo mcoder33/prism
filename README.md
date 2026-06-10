@@ -59,6 +59,13 @@ The core principles, baked into every command:
 - **Recursive decomposition** until a node becomes obvious.
 - **Grounded in real code** — the agent reads your codebase before designing, never in a vacuum.
 - **No big upfront docs.** They overwhelm and get skimmed. Forbidden by convention.
+- **Sized to the change.** A `small`-tier change is one atomic node: two gates total, no
+  decomposition theater, `integrate` skipped entirely. The full flow is for changes that earn it.
+
+Every node carries an explicit status (⚪ proposed → 🟡 in progress → 🟢 atomic → 🔵 applied →
+✅ verified, plus ⏸ for user-deferred parts) with formally defined transitions — a killed
+session resumes exactly where it stopped, and `status` offers a gated repair when the state
+table and reality disagree.
 
 ## Quick start
 
@@ -71,17 +78,28 @@ prism init          # interactive TUI — pick your agents
 Then, inside your agent:
 
 ```
-/prism:propose      # describe the problem, get a 1-screen seed proposal
-/prism:decompose    # split into 2-4 small parts
+/prism:propose      # describe the problem, get a 1-screen seed proposal (+ change tier)
+/prism:decompose    # split into 2-4 small parts (a single part for small-tier changes)
 /prism:drill        # drill ONE part until atomic (spec, detail, diagram, tasks)
-/prism:integrate    # cross-part wiring: integration diagram + combined signatures
+/prism:integrate    # cross-part wiring: diagram + combined signatures (skipped for small)
 /prism:apply        # implement part-by-part, one commit per part, checks after each
 /prism:verify       # pedantic QA on a running dev env: tests, smoke, concurrency, load
 /prism:status       # where am I — phase, node table vs reality, the one next action
 ```
 
 All design artifacts live in `.prism/` at the repo root — **git-excluded automatically**,
-it's local working state, never committed.
+it's local working state. (Optionally a project can commit `.prism/archive/` as shared
+reference — see the conventions installed by `prism init`.)
+
+## First time with PRISM?
+
+1. Skim [the principles](#the-prism-way) above.
+2. Open the worked example — a complete small-tier change, every artifact in its final state:
+   [`.prism/archive/example-json-list/`](.prism/archive/example-json-list/). Start with its
+   [`README.md`](.prism/archive/example-json-list/README.md) (the status table), then
+   [`proposal.md`](.prism/archive/example-json-list/proposal.md) and the
+   [`01-json-flag/`](.prism/archive/example-json-list/01-json-flag/) node.
+3. Run `/prism:propose` in your agent and let the gates walk you through your first change.
 
 ## Inside a drilled node
 

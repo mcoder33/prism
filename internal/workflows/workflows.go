@@ -10,7 +10,7 @@ import (
 
 // Version of the prism CLI; stamped into every generated file.
 // Overridable at build time: -ldflags "-X .../internal/workflows.Version=x.y.z".
-var Version = "0.2.0"
+var Version = "0.3.0"
 
 // Workflow is one prism command installed into agents as a slash command.
 type Workflow struct {
@@ -36,6 +36,12 @@ var All = []Workflow{
 			"then write the seed (proposal + concept) for a new decomposition change.",
 	},
 	{
+		ID:    "status",
+		Title: "PRISM: Status",
+		Description: "Read-only: where the active change stands — phase, node table cross-checked " +
+			"against reality, blockers, and the single next command. The re-entry point after a break.",
+	},
+	{
 		ID:          "decompose",
 		Title:       "PRISM: Decompose",
 		Description: "Split the proposal (or a node) into a few small digestible node.md parts. Recursive.",
@@ -43,8 +49,8 @@ var All = []Workflow{
 	{
 		ID:    "drill",
 		Title: "PRISM: Drill",
-		Description: "Drill ONE part to atomic and generate its artifact set " +
-			"(spec, detail, concept.drawio, signatures, tasks).",
+		Description: "Drill ONE part to atomic: node.md digest first (gate), then the agreed " +
+			"artifact set (spec, detail, concept.drawio, signatures, tasks).",
 	},
 	{
 		ID:    "integrate",

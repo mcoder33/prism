@@ -20,6 +20,36 @@ Full reference example: any archived change under `.prism/archive/` — mirror i
 - **Ground in real code** (symbol-overview / find-symbol tools if available, otherwise grep) —
   don't design in a vacuum.
 
+## Gates
+
+A GATE is a hard stop. When a command step is marked **GATE**:
+
+1. Print the thing to review **inline in chat** — the user must not have to open files.
+2. **End your turn.** Do not create or modify any file, do not begin the next step.
+3. Resume only on an explicit user reply. Your own judgement never counts as approval.
+
+## Atomicity — when to stop drilling
+
+A node is atomic when ALL of these hold:
+
+- **One responsibility** — its What line needs no "and" joining unrelated behaviours.
+- **Decision-complete** — no open choice left that would change a signature (`[minor]` opens only).
+- **Independently testable** — its spec scenarios can pass with sibling nodes stubbed.
+- **Bounded** — est. ≤ ~400 changed LOC · ≤ ~5 files · tasks.md ≤ ~12 boxes · detail.md ≤ 1 screen.
+
+The numbers are trip-wires, not validation rules: if two or more size bounds trip, or any of the
+first three fail — decompose further instead of writing artifacts.
+
+## Node artifact tiers
+
+`node.md` + `tasks.md` are mandatory for every node. The rest scale with node complexity:
+
+- **Trivial** (rename/move, mechanical change, no real decisions) — skip `spec.md` and `concept.drawio`.
+- **Standard** — add `detail.md` + `signatures.md`.
+- **Complex** (branching logic, invariants, concurrency, new API) — full set incl. `concept.drawio`.
+
+The drill GATE proposes the set with a one-line reason per skipped artifact; the user confirms.
+
 ## Layout
 
 All artifacts live under `.prism/` at the repo root. The directory is **created automatically**
@@ -47,13 +77,13 @@ all subsequent decomposition work and design writing target that change automati
 ├── concept.md           best practices + candidate strategies + chosen/rejected (made in prism:propose)
 ├── data-flow.drawio     conceptual data-mutation chain for the chosen strategy (xmllint)
 ├── README.md            tree map + status table + cycle rules
-├── NN-name/             node (part)
-│   ├── node.md          5–7 line digest
+├── NN-name/             node (part) — artifact set per tier (see Node artifact tiers)
+│   ├── node.md          5–7 line digest (always)
 │   ├── spec.md          requirements (Requirement/Scenario)
 │   ├── detail.md        how to implement (decision-complete)
 │   ├── concept.drawio   diagram (mxGraph)
 │   ├── signatures.md    code sketch (signatures + what/why comments)
-│   └── tasks.md         checklist
+│   └── tasks.md         checklist (always)
 │       └── NNa-…/       sub-nodes when drilling further (same structure)
 ├── integration.drawio   overall diagram of how parts connect
 ├── signatures.md        combined call-graph: who calls whom + types flowing between parts
@@ -98,7 +128,7 @@ all subsequent decomposition work and design writing target that change automati
 See `data-flow.drawio` — chain of how data mutates under the chosen strategy.
 ```
 
-### spec.md (openspec-style)
+### spec.md (openspec-style, ≤ ~3 Requirements — more means the node isn't atomic)
 ```
 # Spec — NN <name>
 
@@ -110,7 +140,7 @@ See `data-flow.drawio` — chain of how data mutates under the chosen strategy.
 - THEN <expected result>
 ```
 
-### detail.md
+### detail.md (≤ 1 screen)
 How to implement, decision-complete: algorithm/structures, subtleties, edge-cases, worked example.
 "Open (minor)" — only if genuinely open.
 
@@ -128,7 +158,25 @@ Signatures in a code block + **what/why** comments above each. Mark reused vs ch
 
 ## Statuses (in README)
 
-⚪ not started · 🟡 in progress · 🟢 atomic + artifacts ready
+⚪ not started · 🟡 in progress · 🟢 atomic, artifacts ready · 🔵 applied (committed) · ✅ verified
+
+### README.md (change root)
+
+```
+# <change>
+
+**Phase:** propose → **decompose** → drill → integrate → apply → verify
+
+| Node  | Title | Status | Open    |
+|-------|-------|--------|---------|
+| 01-…  | …     | 🟢     | 1 minor |
+
+Links: [concept.md](concept.md) · [data-flow.drawio](data-flow.drawio)
+```
+
+Bold the **current** phase. Every command updates Phase and the table as its **last** file
+write — the table is the resume point for future sessions (`prism:status` reads it); if it
+lies, resume lies.
 
 ## Formatting (mandatory)
 
@@ -139,7 +187,9 @@ Signatures in a code block + **what/why** comments above each. Mark reused vs ch
 
 - Hand-craft mxGraph (`<mxfile><diagram><mxGraphModel><root>…`). Nodes `vertex="1"`, edges `edge="1"`.
 - Avoid raw `&`, `<`, `>` in labels.
-- **After writing always** validate: `xmllint --noout <file>.drawio`.
+- **After writing always** validate: `xmllint --noout <file>.drawio`. If xmllint is missing:
+  `python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse(sys.argv[1])" <file>.drawio`;
+  if neither is available — re-read the XML carefully for unclosed tags and raw entities.
 
 Two root diagrams, different purpose (don't conflate):
 

@@ -41,7 +41,8 @@ Pick the **high-level approach** before any decomposition (the solution space is
 - Present **a few** strategies — **decision-first**, not a menu to weigh: recommend one, the
   others in **one line each**. Ground them in real code (symbol tools/grep), not in a vacuum.
 - Invite the user to describe **their own** strategy too.
-- This is a decision-point: the user picks (or supplies) the strategy. Don't proceed until fixed.
+- **GATE** — this is a decision-point: the user picks (or supplies) the strategy. Don't proceed
+  until fixed.
 - Record in `concept.md` under `## Candidate strategies` + `## Chosen strategy` (chosen + rejected
   one line each).
 
@@ -51,8 +52,9 @@ For the **chosen** strategy, sketch the chain of **how data changes** end-to-end
 
 - `data-flow.drawio` — nodes labelled with project types / pseudocode, edges = transformations.
   This is the conceptual data flow, distinct from `integration.drawio` (call graph, made at integrate).
-- Hand-craft mxGraph; **after writing always** `xmllint --noout data-flow.drawio`.
-- **Conceptual gate**: confirm the user likes the idea. If not → back to step 3 (don't patch on the fly).
+- Hand-craft mxGraph; **after writing always** validate (see conventions, drawio — xmllint or fallback).
+- **GATE** — conceptual gate: confirm the user likes the idea. If not → back to step 3 (don't
+  patch on the fly).
 
 ## Step 5 — write the seed
 
@@ -63,10 +65,11 @@ already exist from step 2):
    `## Why` · `## What` · `## Constraints & Invariants` · `## Decisions` · `## Non-goals`.
    In bullets. `## Decisions` reflects the **chosen strategy** + invariants; the depth (best-practices,
    candidates, rejected) lives in `concept.md`, the data chain in `data-flow.drawio` — not here.
-2. Write `README.md` — empty tree map + status table (no parts yet), links to `concept.md` +
-   `data-flow.drawio`, and cycle rules (confirm part → decompose/detail → artifacts → integration).
+2. Write `README.md` — per the template in conventions: Phase line (bold **propose**), empty
+   status table (no parts yet), links to `concept.md` + `data-flow.drawio`.
 3. Confirm `.prism/CURRENT` points at `<change>` (set in step 2) so subsequent prism commands target it.
 
 ## Next
 
 Tell the user: proposal + concept ready → {{cmd:decompose}} to split into parts.
+End your turn here — do not start decomposing.

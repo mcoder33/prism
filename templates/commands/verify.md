@@ -34,6 +34,17 @@ Before any substantive actions, determine **how this project is built, checked, 
 
 If the project has a unified task runner (make targets, task scripts) — use its commands rather than duplicating raw tool invocations.
 
+### 0.5 PRISM design context
+
+If `.prism/CURRENT` names a change (or an explicit `<change>` is given), this verification is **design-aware**:
+
+- Read `.prism/<change>/proposal.md` → its **Constraints & Invariants** join Step 5's invariant checks verbatim.
+- Read every part's `spec.md` → each Requirement/Scenario becomes a first-class checklist item: map it to a test or a smoke probe (apply records the scenario→test mapping); report each as `passed` / `failed` / `affected but untested`. A scenario with **no covering test** is an advisory finding; an **unmet** scenario is blocking.
+- Add a **`design conformance`** group to the Step 9 report.
+- On overall **PASS**, flip applied nodes 🔵 → ✅ in the change's `README.md` and set Phase → **verify**.
+
+No `.prism` context → proceed project-agnostic as before, and say so in the report.
+
 ### 1. Environment bootstrap
 
 - Determine whether the project needs a running runtime (DB, broker, containers). If so — check whether it is up (container status, healthcheck, port).
@@ -115,11 +126,12 @@ Fix findings; don't leave them for later:
 2. After fixes, **re-run** the relevant checks (at minimum affected tests + Step 5 for concurrency); for concurrency fixes, re-run under the race detector and stress is mandatory.
 3. Limit — **3 fix cycles** per problem. If it doesn't converge, or the cause is unclear/the fix is risky — don't guess: leave as a finding and describe in recommendations (Step 9).
 4. Do not mask symptoms (weakening/removing a test, inflating a timeout to get a green run, swallowing an error) — this counts as a verification failure, not a fix.
-5. With `--no-fix` — don't change anything, only report.
+5. **Ownership**: verify owns code-level fixes; a **design gap** (wrong interface, missing part, flawed model) goes back to apply/drill — report it, don't redesign here. If a fix changes the design, update the owning part's artifacts (`signatures.md`/`detail.md`/`spec.md`) so they describe what was actually built.
+6. With `--no-fix` — don't change anything, only report.
 
 ### 9. Verdict, report, and recommendations
 
-Output a **structured** report by group — **environment / static / tests / concurrency / functional smoke / browser** — with statuses `passed` / `failed` / `skipped (reason)` / `affected but untested`. For each finding: what was checked, expected/got, file/test/endpoint/command/screen, and (if fixed) what exactly was changed and the re-run result.
+Output a **structured** report by group — **environment / static / tests / concurrency / functional smoke / browser / design conformance** (the last one when design-aware, Step 0.5) — with statuses `passed` / `failed` / `skipped (reason)` / `affected but untested`. For each finding: what was checked, expected/got, file/test/endpoint/command/screen, and (if fixed) what exactly was changed and the re-run result.
 
 Overall verdict:
 - **FAIL** — there is an unresolved blocking finding (static/test failure, confirmed concurrency bug, smoke failure from a code defect) or the required environment is not up;

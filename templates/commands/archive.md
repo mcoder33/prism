@@ -28,7 +28,12 @@ prompt for selection (never auto-guess).
    - Move the whole folder: `mv .prism/<change> .prism/archive/<change>`.
    - If `.prism/CURRENT` points to this change, clear it (no active change after archiving).
 
-4. **Display summary** — change name, archive location, and any warnings (incomplete tasks).
+4. **Mini-retro (optional, keep tiny).** If during apply/verify the design had to change
+   (deviations recorded under the design-as-built rule), propose **≤ 3 one-line additions** to the
+   project's committed agent docs (CLAUDE.md/AGENTS.md) capturing the lessons — the user decides.
+   Don't write a retro file into `.prism/` (it's git-excluded and would die locally).
+
+5. **Display summary** — change name, archive location, and any warnings (incomplete tasks).
 
 ## Rules
 

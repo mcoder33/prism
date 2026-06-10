@@ -77,6 +77,7 @@ Then, inside your agent:
 /prism:integrate    # cross-part wiring: integration diagram + combined signatures
 /prism:apply        # implement part-by-part, one commit per part, checks after each
 /prism:verify       # pedantic QA on a running dev env: tests, smoke, concurrency, load
+/prism:status       # where am I — phase, node table vs reality, the one next action
 ```
 
 All design artifacts live in `.prism/` at the repo root — **git-excluded automatically**,
@@ -84,7 +85,9 @@ it's local working state, never committed.
 
 ## Inside a drilled node
 
-`/prism:drill` takes **one part** and brings it to atomic. Here's what that looks like for a
+`/prism:drill` takes **one part** and brings it to atomic. It writes the `node.md` digest first
+and **stops at a gate** — you react to the digest and the proposed artifact set before anything
+else is generated (trivial nodes skip the diagram and spec). Here's what that looks like for a
 `01-token-bucket` node of a rate-limiter change — three artifacts carry the weight:
 
 **`node.md` — the unit of review.** 5-7 lines. You react to *this*, not to a design doc:

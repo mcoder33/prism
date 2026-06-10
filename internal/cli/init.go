@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/mcoder33/prism/internal/adapters"
@@ -43,10 +42,7 @@ func runInit(projectRoot, toolsFlag string) error {
 			return err
 		}
 	case isTTY():
-		tools, err = selectToolsInteractive(projectRoot)
-		if err != nil {
-			return err
-		}
+		return runInitTUI(projectRoot)
 	default:
 		tools = installer.DetectTools(projectRoot)
 		if len(tools) == 0 {
@@ -95,45 +91,6 @@ func parseToolsFlag(flag string) ([]adapters.Tool, error) {
 			return nil, fmt.Errorf("unknown tool %q; known tools: %s, or \"all\"/\"none\"",
 				id, strings.Join(adapters.IDs(), ", "))
 		}
-		tools = append(tools, t)
-	}
-	return tools, nil
-}
-
-func selectToolsInteractive(projectRoot string) ([]adapters.Tool, error) {
-	detected := map[string]bool{}
-	for _, t := range installer.DetectTools(projectRoot) {
-		detected[t.ID] = true
-	}
-	configured := map[string]bool{}
-	for _, t := range installer.ConfiguredTools(projectRoot) {
-		configured[t.ID] = true
-	}
-
-	options := make([]huh.Option[string], 0, len(adapters.All))
-	for _, t := range adapters.All {
-		label := t.Name
-		switch {
-		case configured[t.ID]:
-			label += " (installed)"
-		case detected[t.ID]:
-			label += " (detected)"
-		}
-		options = append(options, huh.NewOption(label, t.ID).Selected(configured[t.ID] || detected[t.ID]))
-	}
-
-	var picked []string
-	prompt := huh.NewMultiSelect[string]().
-		Title("Which AI tools should get the prism commands?").
-		Options(options...).
-		Value(&picked)
-	if err := huh.NewForm(huh.NewGroup(prompt)).Run(); err != nil {
-		return nil, err
-	}
-
-	tools := make([]adapters.Tool, 0, len(picked))
-	for _, id := range picked {
-		t, _ := adapters.ByID(id)
 		tools = append(tools, t)
 	}
 	return tools, nil

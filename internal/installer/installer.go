@@ -76,16 +76,25 @@ func InstallShared(projectRoot string) ([]string, error) {
 	return []string{ConventionsPath}, nil
 }
 
-// InstallTool writes all command files for one tool.
+// InstallCommand writes one command file for a tool, returning its project-relative path.
 // Files are tool-owned: always overwritten.
+func InstallCommand(projectRoot string, t adapters.Tool, w workflows.Workflow) (string, error) {
+	body := adapters.ResolveCommandRefs(workflows.Body(w.ID), t)
+	rendered := t.Format(w, body, workflows.Version)
+	rel := t.CommandFile(w.ID)
+	if err := writeFileEnsured(filepath.Join(projectRoot, rel), rendered); err != nil {
+		return "", fmt.Errorf("write %s: %w", rel, err)
+	}
+	return rel, nil
+}
+
+// InstallTool writes all command files for one tool.
 func InstallTool(projectRoot string, t adapters.Tool) ([]string, error) {
 	files := make([]string, 0, len(workflows.All))
 	for _, w := range workflows.All {
-		body := adapters.ResolveCommandRefs(workflows.Body(w.ID), t)
-		rendered := t.Format(w, body, workflows.Version)
-		rel := t.CommandFile(w.ID)
-		if err := writeFileEnsured(filepath.Join(projectRoot, rel), rendered); err != nil {
-			return nil, fmt.Errorf("write %s: %w", rel, err)
+		rel, err := InstallCommand(projectRoot, t, w)
+		if err != nil {
+			return nil, err
 		}
 		files = append(files, rel)
 	}

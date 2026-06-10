@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/mcoder33/prism/internal/adapters"
 	"github.com/mcoder33/prism/internal/workflows"
@@ -49,12 +50,10 @@ func projectRootArg(args []string) (string, error) {
 	return abs, nil
 }
 
+// isTTY reports whether we can run the interactive TUI. os.Stat-based checks
+// are not enough: /dev/null is a char device but not a terminal.
 func isTTY() bool {
-	st, err := os.Stdin.Stat()
-	if err != nil {
-		return false
-	}
-	return st.Mode()&os.ModeCharDevice != 0
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
 
 func toolNames(tools []adapters.Tool) string {

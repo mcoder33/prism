@@ -11,14 +11,13 @@ linters:
     - ineffassign
     - staticcheck
     - misspell
+  settings:
+    misspell:
+      locale: US
 
 formatters:
   enable:
     - gofmt
-
-linters-settings:
-  misspell:
-    locale: US
 
 issues:
   max-issues-per-linter: 0

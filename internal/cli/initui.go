@@ -67,11 +67,11 @@ type initModel struct {
 	detected    map[string]bool
 	configured  map[string]bool
 
-	phase     initPhase
-	cursor    int
-	selected  map[int]bool
-	cancelled bool
-	err       error
+	phase    initPhase
+	cursor   int
+	selected map[int]bool
+	canceled bool
+	err      error
 
 	spinner    spinner.Model
 	queue      []adapters.Tool
@@ -138,7 +138,7 @@ func (m initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case phasePick:
 			switch msg.String() {
 			case "ctrl+c", "q", "esc":
-				m.cancelled = true
+				m.canceled = true
 				return m, tea.Quit
 			case "up", "k":
 				if m.cursor > 0 {
@@ -178,7 +178,7 @@ func (m initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case phaseInstall:
 			if msg.String() == "ctrl+c" {
-				m.cancelled = true
+				m.canceled = true
 				return m, tea.Quit
 			}
 		}
@@ -322,8 +322,8 @@ func runInitTUI(projectRoot string) error {
 	switch {
 	case final.err != nil:
 		return final.err
-	case final.cancelled:
-		fmt.Println(yellow("Cancelled."))
+	case final.canceled:
+		fmt.Println(yellow("Canceled."))
 	case final.phase == phasePick:
 		fmt.Println(yellow("No tools selected — nothing to do."))
 	}

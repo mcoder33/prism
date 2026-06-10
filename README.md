@@ -16,30 +16,11 @@ verified change through small, confirmable steps.*
 
 </div>
 
----
+<div align="center">
 
-```
-  ██████╗ ██████╗ ██╗███████╗███╗   ███╗
-  ██╔══██╗██╔══██╗██║██╔════╝████╗ ████║
-  ██████╔╝██████╔╝██║███████╗██╔████╔██║
-  ██╔═══╝ ██╔══██╗██║╚════██║██║╚██╔╝██║
-  ██║     ██║  ██║██║███████║██║ ╚═╝ ██║
-  ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝     ╚═╝
-           v0.2.0 · workflow installer
+![prism init demo](assets/demo.gif)
 
-  Select tools ─────────────────────────────
-  ▸ ◉ Claude Code      installed
-    ◉ Cursor           detected
-    ◯ Codex CLI
-    ◯ Gemini CLI
-
-  Installing ───────────────────────────────
-  ✔ conventions.md → .prism/
-  ✔ Claude Code     8 commands → .claude/commands/prism/
-  ⠹ Cursor          ████████████░░░░  6/8
-
-  ✔ Done! Try /prism:propose in Claude Code to start a change.
-```
+</div>
 
 ## The problem
 
@@ -99,6 +80,21 @@ Then, inside your agent:
 
 All design artifacts live in `.prism/` at the repo root — **git-excluded automatically**,
 it's local working state, never committed.
+
+## A 10-second tour
+
+**1. `prism init` detects your agents.** Tools with dot-dirs in the project (`.claude/`, `.cursor/`…)
+are found and pre-selected; already-installed ones are marked. Toggle anything else you want:
+
+<p align="center"><img src="assets/select-toggled.png" width="640" alt="Tool selection: detected agents are pre-checked, cursor on Codex CLI just toggled on"></p>
+
+**2. Commands install with live progress** — one file per workflow command, per tool:
+
+<p align="center"><img src="assets/installing.png" width="640" alt="Live install progress: conventions and Claude Code done, Cursor at 3/8 with a progress bar"></p>
+
+**3. Done — your agents now speak PRISM.** The same `.prism/` state is shared by every tool:
+
+<p align="center"><img src="assets/done.png" width="640" alt="Install finished: 8 commands per tool, hint to run /prism:propose"></p>
 
 ## What you get per change
 

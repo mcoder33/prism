@@ -268,7 +268,7 @@ func (m initModel) View() string {
 			if i == m.cursor {
 				name = lipgloss.NewStyle().Bold(true).Render(name)
 			}
-			b.WriteString(fmt.Sprintf("  %s%s %s %s\n", cursor, box, name, note))
+			fmt.Fprintf(&b, "  %s%s %s %s\n", cursor, box, name, note)
 		}
 		b.WriteString("\n  " + stSubtle.Render("space toggle · a all · enter install · q quit") + "\n")
 
@@ -291,15 +291,15 @@ func (m initModel) View() string {
 			switch {
 			case done == total:
 				dir := filepath.Dir(t.CommandFile(workflows.All[0].ID)) + "/"
-				b.WriteString(fmt.Sprintf("  %s %s %s\n",
-					stOK.Render("✔"), name, stSubtle.Render(fmt.Sprintf("%d commands → %s", total, dir))))
+				fmt.Fprintf(&b, "  %s %s %s\n",
+					stOK.Render("✔"), name, stSubtle.Render(fmt.Sprintf("%d commands → %s", total, dir)))
 			case ti == curTool:
-				b.WriteString(fmt.Sprintf("  %s%s %s %s\n",
+				fmt.Fprintf(&b, "  %s%s %s %s\n",
 					m.spinner.View(), name, progressBar(done, total),
-					stSubtle.Render(fmt.Sprintf("%d/%d", done, total))))
+					stSubtle.Render(fmt.Sprintf("%d/%d", done, total)))
 			default:
-				b.WriteString(fmt.Sprintf("  %s %s %s\n",
-					stSubtle.Render("◦"), stSubtle.Render(name), stSubtle.Render("waiting")))
+				fmt.Fprintf(&b, "  %s %s %s\n",
+					stSubtle.Render("◦"), stSubtle.Render(name), stSubtle.Render("waiting"))
 			}
 		}
 

@@ -136,7 +136,7 @@ var Gemini = Tool{
 		// TOML literal multi-line strings process no escapes; guard the delimiter
 		// (zero-width space between quotes). Gemini CLI injects invocation args
 		// via {{args}}, not $ARGUMENTS.
-		safeBody := strings.ReplaceAll(body, "'''", "''​'")
+		safeBody := strings.ReplaceAll(body, "'''", "''\u200b'")
 		safeBody = strings.ReplaceAll(safeBody, "$ARGUMENTS", "{{args}}")
 		desc, _ := json.Marshal(w.Description)
 		return strings.Join([]string{

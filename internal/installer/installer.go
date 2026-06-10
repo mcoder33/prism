@@ -128,7 +128,9 @@ func AddToGitExclude(projectRoot string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	_, err = f.WriteString(entry)
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
 	return err
 }

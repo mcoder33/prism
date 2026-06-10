@@ -2,6 +2,13 @@ Starts a new "change" in the recursive decomposition methodology.
 
 **Read first**: `.prism/conventions.md` (formats, layout, rules; if missing, run `prism update`).
 
+## Amendment mode (existing change)
+
+If `proposal.md` already exists for the active change, this is an **amendment**, not a new
+change: present the DELTA to Why/What/Decisions (**GATE**), update `proposal.md` + `concept.md`,
+then route to {{cmd:decompose}} for the affected parts only (revision rules — in conventions).
+Skip steps 2–4 unless the strategy itself is in question.
+
 ## Step 1 — grill the user on requirements
 
 Before writing anything, **interview the user on the plan/task until you reach shared understanding**.
@@ -18,6 +25,12 @@ Cover at minimum: **problem and why** · **scope and non-goals** · **hard const
 
 Stop when the *problem* is clear and no ambiguities remain. (The *solution* — strategy and data
 flow — is fixed in steps 2–4 below, not here.)
+
+> **Tier**: by the end of step 1 you know the change's size — propose its tier
+> (`small | standard`; criteria — conventions, Change tiers) and have the user confirm it at
+> the next gate; the confirmed value becomes the `**Tier:**` line in `README.md` (step 5).
+> For **small**: merge steps 3 and 4 into ONE gate (strategy + data flow together; data flow
+> may be text/pseudocode in `concept.md` — no `data-flow.drawio` needed).
 
 ## Step 2 — best practices (skippable)
 
@@ -58,15 +71,18 @@ For the **chosen** strategy, sketch the chain of **how data changes** end-to-end
 
 ## Step 5 — write the seed
 
-When the strategy and data flow are confirmed (the change dir + `concept.md` + `data-flow.drawio`
-already exist from step 2):
+When the strategy and data flow are confirmed (the change dir was created in the step 2 setup;
+`concept.md` + `data-flow.drawio` were filled in steps 2–4):
 
 1. Write `proposal.md` — **short, < 1 screen**, openspec-style:
    `## Why` · `## What` · `## Constraints & Invariants` · `## Decisions` · `## Non-goals`.
-   In bullets. `## Decisions` reflects the **chosen strategy** + invariants; the depth (best-practices,
-   candidates, rejected) lives in `concept.md`, the data chain in `data-flow.drawio` — not here.
-2. Write `README.md` — per the template in conventions: Phase line (bold **propose**), empty
-   status table (no parts yet), links to `concept.md` + `data-flow.drawio`.
+   In bullets. `## Why` = 2–4 bullets: the concrete pain or trigger, who hits it, and the cost
+   of not doing it — no mission statements. `## Decisions` reflects the **chosen strategy** +
+   invariants; the depth (best-practices, candidates, rejected) lives in `concept.md`, the data
+   chain in `data-flow.drawio` — not here.
+2. Write `README.md` — per the template in conventions: Phase line (bold **propose**), Tier
+   line (`small | standard`, agreed at the gate), empty status table (no parts yet), links to
+   `concept.md` + `data-flow.drawio` (if made).
 3. Confirm `.prism/CURRENT` points at `<change>` (set in step 2) so subsequent prism commands target it.
 
 ## Next

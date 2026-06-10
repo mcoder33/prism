@@ -25,6 +25,8 @@ prism command and all design writing target it by default**, without re-specifyi
 2. **start / switch** (`<change>` given, or picked from the list):
    - Verify `.prism/<change>/` exists; if not, fall back to the interactive picker (step 1).
    - Write the slug to `.prism/CURRENT` (create `.prism/` if missing), replacing any previous value.
+   - If the change's `README.md` records `**Branch:**` and the current git branch differs —
+     warn (`on <current>, change expects <recorded>`); never switch branches yourself.
    - Confirm: `active change → <change>`.
 
 3. **show**: when the user just wants the current value, print `.prism/CURRENT` (or "none").

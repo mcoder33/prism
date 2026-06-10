@@ -38,10 +38,12 @@ If the project has a unified task runner (make targets, task scripts) — use it
 
 If `.prism/CURRENT` names a change (or an explicit `<change>` is given), this verification is **design-aware**:
 
+- Read `.prism/conventions.md`, then set Phase → **verify** in the change's `README.md` now, on entry (see conventions, Statuses and transitions).
 - Read `.prism/<change>/proposal.md` → its **Constraints & Invariants** join Step 5's invariant checks verbatim.
-- Read every part's `spec.md` → each Requirement/Scenario becomes a first-class checklist item: map it to a test or a smoke probe (apply records the scenario→test mapping); report each as `passed` / `failed` / `affected but untested`. A scenario with **no covering test** is an advisory finding; an **unmet** scenario is blocking.
+- Read every part's `spec.md` → each Requirement/Scenario becomes a first-class checklist item. Map scenarios via the `## Coverage` section (written by apply; format — conventions, spec.md); if it's absent (older change), fall back to matching test names to scenario names, then write the section. Report each as `passed` / `failed` / `affected but untested`. A scenario with **no covering test** is an advisory finding; an **unmet** scenario is blocking.
+- Skip ⏸ deferred nodes — list them in the report as `skipped (deferred)`.
 - Add a **`design conformance`** group to the Step 9 report.
-- On overall **PASS**, flip applied nodes 🔵 → ✅ in the change's `README.md` and set Phase → **verify**.
+- On overall **PASS**, flip applied nodes 🔵 → ✅ in the change's `README.md`.
 
 No `.prism` context → proceed project-agnostic as before, and say so in the report.
 
@@ -112,7 +114,7 @@ Run **every** touched entry point with a real call in the detected mode. Coverag
 1. **Credentials** (if UI requires auth):
    - Read `.prism/verify.local.json` (if a valid `username`+`password` pair is present — use it).
    - Otherwise attempt to obtain test credentials via the project's built-in mechanism (seed/fixture/console command), if one exists.
-   - If password is unknown — ask the developer (interactive question) and save the pair to `.prism/verify.local.json` (the `.prism/` directory is git-excluded).
+   - If password is unknown — ask the developer (interactive question) and save the pair to `.prism/verify.local.json` (the `.prism/` directory is git-excluded). Running headless/non-interactively (CI, no question tool) — don't hang on a question: skip this step with reason.
 2. **Browser MCP**: prefer **Playwright MCP**, fallback — **Chrome DevTools MCP**. If neither is connected — skip with reason.
 3. Log in and walk through diff-touched screens: open the page, click buttons, create/edit an entity (tag recognizably).
 4. **Error detection**: console errors, error responses, server 5xx → `failed-finding` in report.
@@ -124,9 +126,11 @@ Fix findings; don't leave them for later:
 
 1. For each **blocking** finding (test/static failure, concurrency bug, smoke failure from a code defect) — if the cause is clear and local, make a minimal correct fix.
 2. After fixes, **re-run** the relevant checks (at minimum affected tests + Step 5 for concurrency); for concurrency fixes, re-run under the race detector and stress is mandatory.
-3. Limit — **3 fix cycles** per problem. If it doesn't converge, or the cause is unclear/the fix is risky — don't guess: leave as a finding and describe in recommendations (Step 9).
+3. One **fix cycle** = one fix attempt + the re-run from item 2. Limit — **3 fix cycles** per finding. If it doesn't converge, or the cause is unclear/the fix is risky — don't guess: leave as a finding and describe in recommendations (Step 9).
 4. Do not mask symptoms (weakening/removing a test, inflating a timeout to get a green run, swallowing an error) — this counts as a verification failure, not a fix.
-5. **Ownership**: verify owns code-level fixes; a **design gap** (wrong interface, missing part, flawed model) goes back to apply/drill — report it, don't redesign here. If a fix changes the design, update the owning part's artifacts (`signatures.md`/`detail.md`/`spec.md`) so they describe what was actually built.
+5. **Ownership boundary**:
+   - **verify owns**: code-level fixes, and the artifact sync they force — if a fix changes a signature or behaviour described in the owning part's `signatures.md`/`detail.md`/`spec.md`, update that file in the same cycle (design-as-built holds in verify too).
+   - **verify escalates** (never fixes): structural defects — a wrong interface BETWEEN parts, a missing part, flawed decomposition, an invariant in `proposal.md` the design cannot satisfy. Escalation: flip the owning node 🔵 → 🟡 in `README.md`, add `[blocking] verify escalation: <one line>` to its `node.md` Open, set verdict **FAIL (design)**, and recommend {{cmd:drill}} `<NN>` → re-apply → re-verify. Do not redesign inside verify.
 6. With `--no-fix` — don't change anything, only report.
 
 ### 9. Verdict, report, and recommendations
@@ -135,10 +139,35 @@ Output a **structured** report by group — **environment / static / tests / con
 
 Overall verdict:
 - **FAIL** — there is an unresolved blocking finding (static/test failure, confirmed concurrency bug, smoke failure from a code defect) or the required environment is not up;
+- **FAIL (design)** — a structural defect was escalated (Step 8.5): the owning node is already flipped 🔵 → 🟡; remediation goes through drill → re-apply → re-verify;
 - **PASS_WITH_FINDINGS** — no blockers, but advisory findings or `affected but untested` remain;
 - **PASS** — everything green or advisory checks were legitimately skipped.
 
 At the end — **fix recommendations**: for each remaining finding (and for risky fixes deferred in Step 8), a concrete recommendation of what and how to fix, with priority. Explicitly answer the question "**is this production-ready**" and what is blocking it, if not.
+
+**Persist the report** (design-aware runs only): write it to `.prism/<change>/verify.md` (create if missing) — overwrite the body, append one line per run to a `## History` table at the bottom (date · verdict · open findings count). Skeleton:
+
+```
+# Verify — <change> (<date>)
+
+**Verdict:** FAIL | FAIL (design) | PASS_WITH_FINDINGS | PASS
+
+| Group | Status | Notes |
+|-------|--------|-------|
+(environment / static / tests / concurrency / functional smoke / browser / design conformance)
+
+## Findings
+### <finding> — expected/got, location, fix applied + re-run result
+
+## Affected but untested
+- <point> — <reason>
+
+## Recommendations
+- <prioritized: what and how to fix>
+
+## History
+| Date | Verdict | Open findings |
+```
 
 ---
 

@@ -19,12 +19,14 @@ prompt for selection (never auto-guess).
    - show the count and which file(s) they're in;
    - ask the user (interactive question) to confirm they still want to archive;
    - proceed only on confirmation.
-   If there's no `tasks.md`, proceed without a task warning.
+   If there's no `tasks.md`, proceed without a task warning. Also list any ⏸ deferred nodes
+   as warnings (they were intentionally skipped — see conventions, Open tags).
 
 3. **Perform the archive.**
    - Create the archive dir if missing: `mkdir -p .prism/archive`.
-   - **Collision check**: if `.prism/archive/<change>/` already exists, stop and report it
-     (suggest renaming the existing archive); do not overwrite.
+   - **Collision check**: if `.prism/archive/<change>/` already exists, propose archiving as
+     `<change>-r2` (next free `-rN` suffix) and confirm via an interactive question. Never
+     overwrite, never silently rename the old one.
    - Move the whole folder: `mv .prism/<change> .prism/archive/<change>`.
    - If `.prism/CURRENT` points to this change, clear it (no active change after archiving).
 
@@ -39,5 +41,9 @@ prompt for selection (never auto-guess).
 
 - Always prompt for selection if the change is not provided/inferable; never auto-guess.
 - Don't block on warnings — inform and confirm, then proceed.
-- `.prism/` artifacts are not committed; archiving is a filesystem move only (no commit).
+- `.prism/` artifacts are not committed by default; archiving is a filesystem move only
+  (no commit — unless the project opted into sharing archives, see conventions).
 - Don't overwrite an existing archive entry.
+- **Hotfix to an archived change**: don't move it back. Start a new change ({{cmd:propose}})
+  whose `proposal.md` links the archived folder under `## Why` — the archive stays an
+  immutable as-built record.

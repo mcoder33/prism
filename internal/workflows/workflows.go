@@ -10,7 +10,7 @@ import (
 
 // Version of the prism CLI; stamped into every generated file.
 // Overridable at build time: -ldflags "-X .../internal/workflows.Version=x.y.z".
-var Version = "0.3.0"
+var Version = "0.4.0"
 
 // Workflow is one prism command installed into agents as a slash command.
 type Workflow struct {
@@ -38,8 +38,9 @@ var All = []Workflow{
 	{
 		ID:    "status",
 		Title: "PRISM: Status",
-		Description: "Read-only: where the active change stands — phase, node table cross-checked " +
-			"against reality, blockers, and the single next command. The re-entry point after a break.",
+		Description: "Where the active change stands — phase, node table cross-checked against " +
+			"reality, blockers, the single next command; offers a gated repair plan when the table " +
+			"and reality disagree. The re-entry point after a break.",
 	},
 	{
 		ID:          "decompose",

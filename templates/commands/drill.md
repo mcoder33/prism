@@ -8,9 +8,11 @@ Brings ONE part to "atomic" and generates its artifacts. Argument: `<NN-name>`.
 
 ## Procedure
 
-1. Read `NN-name/node.md` and the relevant **real code** (symbol-overview / find-symbol tools
-   if available, otherwise grep) — signatures and details must be grounded in facts, not guesses.
-   Mark the node 🟡 in `README.md`.
+1. If the node is ⏸ — confirm the un-defer with the user, then remove its `[deferred: …]`
+   line. Mark the node 🟡 and set Phase → **drill** in `README.md` first (crash-resume
+   marker — see conventions, Statuses and transitions). Then read `NN-name/node.md` and the
+   relevant **real code** (symbol-overview / find-symbol tools if available, otherwise grep) —
+   signatures and details must be grounded in facts, not guesses.
 2. **Atomicity check** (criteria — in conventions). Not atomic → propose the sub-split and
    redirect to {{cmd:decompose}} `<NN-name>`. Stop.
 3. Write/refresh **`node.md` only**. Present inline in chat:
@@ -20,7 +22,9 @@ Brings ONE part to "atomic" and generates its artifacts. Argument: `<NN-name>`.
      (tiers — in conventions);
    - open questions, each tagged `[blocking]` or `[minor]`.
 
-   **GATE** — the user reacts to the digest. `[blocking]` opens must be resolved here.
+   **GATE** — the user reacts to the digest. `[blocking]` opens must be resolved here — or
+   explicitly deferred by the user: record `[deferred: <reason> — user, <date>]` in `node.md`
+   (tags — in conventions). The user may also defer the whole node → status ⏸ in `README.md`.
 4. On approval: generate the remaining artifacts of the agreed tier (templates — in conventions):
    - `spec.md` — Requirement/Scenario (these also drive the tests later).
    - `detail.md` — how to implement, decision-complete (algorithm, subtleties, edge-cases, worked

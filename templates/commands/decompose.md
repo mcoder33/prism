@@ -16,8 +16,13 @@ Splits the problem into first-level parts — or drills deeper into one node.
 
 1. Read `proposal.md` (or `node.md` of the target node) and, if needed, the real code.
 2. Propose a split into **2–4 parts** — a list of "title + 1-line summary" right in chat.
-   Check the split before presenting it:
-   - 2–4 parts (5+ usually means the proposal itself is too big — say so instead);
+   For `**Tier:** small` (README) a single part is the expected outcome: a lone `01-…/`, no
+   further split. If the honest verdict for a small change is 2+ parts — announce the
+   promotion to `Tier: standard`, update the Tier line in `README.md`, and proceed as a
+   standard split (the user confirms it at the gate below). Check the split before
+   presenting it:
+   - 2–4 parts (5+ usually means the proposal itself is too big — say so instead; exactly 1
+     only for `Tier: small`);
    - dependencies are acyclic; number in dependency order (01 = foundation);
    - each part independently testable and reviewable on its own;
    - comparable sizes; no "misc / the rest" bucket;

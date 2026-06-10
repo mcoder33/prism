@@ -1,4 +1,4 @@
-module gitlab.gidfinance.tech/zadolbator/prism
+module github.com/mcoder33/prism
 
 go 1.26
 

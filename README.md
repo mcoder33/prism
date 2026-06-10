@@ -16,7 +16,7 @@ root (git-excluded — local working state, never committed).
 Single static Go binary, templates embedded:
 
 ```bash
-go install gitlab.gidfinance.tech/zadolbator/prism@latest
+go install github.com/mcoder33/prism@latest
 # or from a local checkout
 go install .
 ```

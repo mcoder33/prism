@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gitlab.gidfinance.tech/zadolbator/prism/internal/workflows"
+	"github.com/mcoder33/prism/internal/workflows"
 )
 
 // Tool describes one supported AI agent: where its command files live,

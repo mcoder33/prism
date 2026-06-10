@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.gidfinance.tech/zadolbator/prism/internal/adapters"
-	"gitlab.gidfinance.tech/zadolbator/prism/internal/workflows"
+	"github.com/mcoder33/prism/internal/adapters"
+	"github.com/mcoder33/prism/internal/workflows"
 )
 
 func Execute() {

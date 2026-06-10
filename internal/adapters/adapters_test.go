@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.gidfinance.tech/zadolbator/prism/internal/workflows"
+	"github.com/mcoder33/prism/internal/workflows"
 )
 
 func TestEveryWorkflowHasTemplateBody(t *testing.T) {

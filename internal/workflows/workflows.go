@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitlab.gidfinance.tech/zadolbator/prism/templates"
+	"github.com/mcoder33/prism/templates"
 )
 
 // Version of the prism CLI; stamped into every generated file.

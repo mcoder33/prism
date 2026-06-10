@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.gidfinance.tech/zadolbator/prism/internal/installer"
+	"github.com/mcoder33/prism/internal/installer"
 )
 
 func newListCmd() *cobra.Command {

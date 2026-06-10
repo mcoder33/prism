@@ -1,6 +1,6 @@
 package main
 
-import "gitlab.gidfinance.tech/zadolbator/prism/internal/cli"
+import "github.com/mcoder33/prism/internal/cli"
 
 func main() {
 	cli.Execute()

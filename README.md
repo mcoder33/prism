@@ -13,11 +13,12 @@ root (git-excluded — local working state, never committed).
 
 ## Install
 
+Single static Go binary, templates embedded:
+
 ```bash
-# from a local checkout
-npm install -g .
-# or via git
-npm install -g git+ssh://git@gitlab.example.com/itfinance/prism.git
+go install gitlab.gidfinance.tech/zadolbator/prism@latest
+# or from a local checkout
+go install .
 ```
 
 Then, in any project:
@@ -47,7 +48,8 @@ prism init --tools all
 | Windsurf | `.windsurf/workflows/prism-*.md` | `/prism-propose` |
 | OpenCode | `.opencode/command/prism-*.md` | `/prism-propose` |
 
-Adding a tool = one small adapter in `src/core/adapters/index.ts` (file path + frontmatter format).
+Adding a tool = one `adapters.Tool` value in `internal/adapters/adapters.go`
+(file path + slash-command naming + frontmatter format).
 
 ## Workflow commands
 
@@ -75,28 +77,32 @@ prism list [path]                             # list active changes in .prism/
 
 Generated files are **tool-owned**: each carries a `prism:generated v<version>` stamp and is
 overwritten wholesale by `prism update` — don't hand-edit them. To change the workflow texts,
-edit `templates/` here and bump the version.
+edit `templates/` here, bump `workflows.Version`, reinstall the binary and run `prism update`
+in consuming projects.
 
 ## Development
 
 ```bash
-npm install
-npm run build     # tsc → dist/
-npm test          # vitest
-node bin/prism.js init --tools claude /path/to/project   # smoke
+go test ./...
+go vet ./...
+go install .                                  # build + put `prism` on PATH
+prism init --tools claude /path/to/project    # smoke
 ```
+
+Stack: Go (stdlib + cobra for the CLI, charmbracelet/huh for the interactive multi-select),
+templates shipped via `go:embed` — the binary is self-contained.
 
 Layout:
 
 ```
-bin/prism.js            CLI shim → dist/cli/index.js
+main.go                      entrypoint → internal/cli
 templates/
-  conventions.md        shared methodology, installed as .prism/conventions.md
-  commands/*.md         tool-neutral command bodies ({{cmd:<id>}} placeholders for cross-refs)
-src/
-  cli/index.ts          commander wiring (init / update / list)
-  core/workflows.ts     workflow registry (id, title, description)
-  core/adapters/        per-tool adapters: paths, slash-command naming, frontmatter
-  core/installer.ts     detection, rendering, writing, git-exclude
-  core/commands/        init / update / list implementations
+  embed.go                   go:embed of the markdown below
+  conventions.md             shared methodology, installed as .prism/conventions.md
+  commands/*.md              tool-neutral command bodies ({{cmd:<id>}} placeholders for cross-refs)
+internal/
+  workflows/workflows.go     workflow registry (id, title, description) + Version
+  adapters/adapters.go       per-tool adapters: paths, slash-command naming, frontmatter
+  installer/installer.go     detection, rendering, writing, git-exclude
+  cli/                       cobra commands: init / update / list
 ```

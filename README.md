@@ -7,6 +7,7 @@
 *Recursive decomposition workflow for AI coding agents — turn a vague idea into an implemented,
 verified change through small, confirmable steps.*
 
+[![CI](https://github.com/mcoder33/prism/actions/workflows/ci.yml/badge.svg)](https://github.com/mcoder33/prism/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mcoder33/prism/pulls)
@@ -176,11 +177,17 @@ Single static binary, zero runtime dependencies, templates embedded via `go:embe
 ## Development
 
 ```bash
-go test ./...
-go vet ./...
-go install .                                  # build + put `prism` on PATH
+make ci          # everything CI runs: test -race, vet, lint, vuln, mod-check
+make test        # just the tests
+make cover       # tests + coverage summary
+make install     # build + put `prism` on PATH
+make help        # list all targets
+
 prism init --tools claude /tmp/sandbox        # smoke test
 ```
+
+CI (GitHub Actions) runs the same five checks on every push and PR; `lint` and `vuln`
+auto-install their tools, so a fresh clone only needs Go.
 
 Layout:
 

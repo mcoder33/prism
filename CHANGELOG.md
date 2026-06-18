@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — 2026-06-18
+
+`propose` is now decision-first end to end: it leads with a proposal and refines it, instead of
+interrogating the user before anything concrete is on the table.
+
+### Changed
+
+- **Reordered `propose`**: best practices now come **first** (skippable breadth) and feed an
+  **initial proposal** (strategy + data-flow sketch + draft seed) — one concrete thing to react
+  to. The requirements **grill** moves *after* that, as a one-question-at-a-time loop that
+  **evolves** the proposal, ending in a single confirm gate. Previously the grill ran first and
+  the proposal was assembled only afterwards.
+- **One propose gate** for both tiers (was: separate strategy + data-flow gates). The grill is
+  the iterative reaction loop; the gate confirms the whole evolved proposal at once.
+- `data-flow.drawio` is hand-crafted at the confirm gate (once the direction is settled) rather
+  than mid-flow, so the grill can't strand a reworked diagram. `small` tier still keeps the data
+  flow as text in `concept.md`.
+
 ## 0.4.0 — 2026-06-10
 
 A methodology overhaul: the flow now scales to the change, state is a formal machine, and

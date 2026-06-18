@@ -10,7 +10,7 @@ import (
 
 // Version of the prism CLI; stamped into every generated file.
 // Overridable at build time: -ldflags "-X .../internal/workflows.Version=x.y.z".
-var Version = "0.4.0"
+var Version = "0.5.0"
 
 // Workflow is one prism command installed into agents as a slash command.
 type Workflow struct {

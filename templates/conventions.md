@@ -33,9 +33,9 @@ A GATE is a hard stop. When a command step is marked **GATE**:
 Set at the end of `prism:propose` (its gate includes the tier); recorded in `README.md` under
 the Phase line as `**Tier:** small | standard`. No Tier line (older change) = standard.
 
-- **small** — the change is expected to be ONE atomic node. propose merges the strategy and
-  data-flow gates into one (data flow may be text/pseudocode in `concept.md`, no
-  `data-flow.drawio`). decompose may conclude "single part" (a lone `01-…/`). integrate is
+- **small** — the change is expected to be ONE atomic node. propose keeps the data flow as
+  text/pseudocode in `concept.md` (no `data-flow.drawio`); its single confirm gate covers
+  strategy + data flow + seed together. decompose may conclude "single part" (a lone `01-…/`). integrate is
   SKIPPED entirely — no root artifacts; the part's own `tasks.md` is the order. Flow:
   drill → apply directly.
 - **standard** — full flow: 2–4 parts, full integrate.

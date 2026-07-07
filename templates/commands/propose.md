@@ -10,22 +10,23 @@ then route to {{cmd:decompose}} for the affected parts only (revision rules — 
 Re-grill (step 3) the affected scope only; revisit best practices / strategy (steps 1–2) only if
 the strategy itself is in question.
 
-## Step 1 — best practices (skippable)
+## Step 1 — best practices (console-only, always first)
 
 > Setup: pick the kebab-case `<change>` slug and create `.prism/<change>/` now (create `.prism/`
-> if missing; add it to `.git/info/exclude`; write the slug to `.prism/CURRENT`) so steps 1–3 can
+> if missing; add it to `.git/info/exclude`; write the slug to `.prism/CURRENT`) so steps 2–3 can
 > persist `concept.md` in place. `proposal.md` / `README.md` come in step 4.
 
-**Lead with breadth**, before committing to any proposal: how is this *class* of problem solved
-in general?
+**Lead with breadth**, before committing to any proposal: reason out loud, in chat, about how
+this *class* of problem is solved in general — before any strategy is on the table.
 
-- First ask (interactive question): do the survey, or skip (recommended option = the one that fits
-  — a routine/well-understood task can skip; a wide solution space benefits from it).
-- If doing it: a short, decision-first survey — **3–6 bullets**, each `practice — when it applies
-  [source]`. You may use web search / docs lookup for current practices, plus your own knowledge.
-  Don't dump essays; give the lay of the land.
-- Persist into `concept.md` under `## Best practices` (mark `> Skipped — user opted out.` if skipped).
-- These practices **feed the proposal** in step 2 — cite them when one tips a strategy choice.
+- A short, decision-first survey — **3–6 bullets**, each `practice — when it applies [source]`.
+  You may use web search / docs lookup for current practices, plus your own knowledge. Don't
+  dump essays; give the lay of the land.
+- **Chat only — do not persist.** This survey is working context, not an artifact: it goes to
+  no file (not `concept.md`, not `proposal.md`). Its value is in shaping what comes next.
+- It **feeds everything downstream**: ground the strategy choice in step 2 on it (cite the
+  practice when one tips a choice), and let it inform your recommended answers during the
+  grill in step 3.
 
 ## Step 2 — initial proposal (decision-first)
 
@@ -54,7 +55,8 @@ Now **interview the user to refine the proposal until you reach shared understan
 question at a time, each one reshaping the step-2 draft. Principles (in the spirit of grill-me):
 
 - Walk the decision tree, resolving dependencies between decisions **one at a time**.
-- **Ask questions one at a time.** For each question give **your recommended answer**.
+- **Ask questions one at a time.** For each question give **your recommended answer** — grounded
+  in the step-1 best practices and the code, where relevant.
 - If a question can be answered by **reading the code — read the code** (symbol tools/grep), don't ask.
 - For discrete choices use your interactive question tool (e.g. `AskUserQuestion` in Claude Code),
   with the recommended option first, marked as such; for open-ended formulations — plain chat.
@@ -76,7 +78,7 @@ the fly. On approval:
    `## Why` · `## What` · `## Constraints & Invariants` · `## Decisions` · `## Non-goals`.
    In bullets. `## Why` = 2–4 bullets: the concrete pain or trigger, who hits it, and the cost
    of not doing it — no mission statements. `## Decisions` reflects the **chosen strategy** +
-   invariants; the depth (best-practices, candidates, rejected) lives in `concept.md`, the data
+   invariants; the depth (candidates, rejected) lives in `concept.md`, the data
    chain in the data flow — not here.
 2. For **standard** tier: hand-craft `data-flow.drawio` — nodes labelled with project types /
    pseudocode, edges = transformations (distinct from `integration.drawio`, the call graph made at

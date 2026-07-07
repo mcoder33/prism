@@ -1,9 +1,5 @@
 # Concept — example-json-list
 
-## Best practices
-
-> Skipped — user opted out (routine flag addition).
-
 ## Candidate strategies
 
 - **A. Marshal the existing list model** — RECOMMENDED — the table already renders from a

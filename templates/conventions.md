@@ -107,7 +107,7 @@ the pointer (rewrites or clears it).
 ```
 .prism/<change>/
 ├── proposal.md          seed: Why / What / Constraints+Invariants / Decisions / Non-goals  (< 1 screen)
-├── concept.md           best practices + candidate strategies + chosen/rejected (made in prism:propose)
+├── concept.md           candidate strategies + chosen/rejected (made in prism:propose)
 ├── data-flow.drawio     conceptual data-mutation chain for the chosen strategy (xmllint)
 ├── README.md            tree map + status table + cycle rules
 ├── NN-name/             node (part) — artifact set per tier (see Node artifact tiers)
@@ -142,11 +142,6 @@ the pointer (rewrites or clears it).
 ### concept.md (made in prism:propose, before the seed)
 ```
 # Concept — <change>
-
-## Best practices
-- <practice> — <when it applies> [source]
-- …
-(or: > Skipped — user opted out.)
 
 ## Candidate strategies
 - **A. <name>** — RECOMMENDED — <2–3 lines: idea, why it fits>

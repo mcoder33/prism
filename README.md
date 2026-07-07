@@ -131,7 +131,7 @@ patching on the fly.
 ```
 .prism/<change>/
 ├── proposal.md          Why / What / Constraints / Decisions / Non-goals  (< 1 screen)
-├── concept.md           surveyed best practices + chosen/rejected strategies
+├── concept.md           candidate + chosen/rejected strategies
 ├── data-flow.drawio     conceptual data-mutation chain
 ├── 01-parser/           ← a node
 │   ├── node.md          5-7 line digest — the unit of review

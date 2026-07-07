@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.1 — 2026-07-07
+
+The best-practices survey in `propose` is now unconditional and chat-only: general reasoning
+about the problem class always happens first and shapes everything downstream, instead of being
+an optional persisted artifact.
+
+### Changed
+
+- **Best-practices step is always-on** — the interactive "survey or skip" question is gone;
+  `propose` always leads with a short breadth survey (3–6 bullets) before any strategy is on
+  the table.
+- **Console-only** — the survey lives in chat and is never persisted (`concept.md` no longer
+  has a `## Best practices` section); its value is in shaping what comes next, not in an
+  artifact.
+- The survey explicitly **feeds downstream**: the step-2 strategy choice cites the practice
+  that tips it, and the grill's recommended answers are grounded in the step-1 survey and the
+  code.
+
 ## 0.5.0 — 2026-06-18
 
 `propose` is now decision-first end to end: it leads with a proposal and refines it, instead of

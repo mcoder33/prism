@@ -10,7 +10,7 @@ import (
 
 // Version of the prism CLI; stamped into every generated file.
 // Overridable at build time: -ldflags "-X .../internal/workflows.Version=x.y.z".
-var Version = "0.5.0"
+var Version = "0.5.1"
 
 // Workflow is one prism command installed into agents as a slash command.
 type Workflow struct {
@@ -32,8 +32,9 @@ var All = []Workflow{
 	{
 		ID:    "propose",
 		Title: "PRISM: Propose",
-		Description: "Grill on requirements, survey best practices, pick a strategy + data-flow, " +
-			"then write the seed (proposal + concept) for a new decomposition change.",
+		Description: "Survey best practices in chat first, propose a strategy + data-flow grounded " +
+			"in them, grill on requirements, then write the seed (proposal + concept) for a new " +
+			"decomposition change.",
 	},
 	{
 		ID:    "status",

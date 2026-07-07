@@ -13,7 +13,7 @@ verified change through small, confirmable steps.*
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mcoder33/prism/pulls)
 [![Works with: Claude Code](https://img.shields.io/badge/Claude_Code-✓-d97757)](#supported-tools)
 [![Works with: Cursor](https://img.shields.io/badge/Cursor-✓-000000)](#supported-tools)
-[![Works with: 7 agents](https://img.shields.io/badge/+5_more_agents-✓-7c4ff4)](#supported-tools)
+[![Works with: 9 agents](https://img.shields.io/badge/+7_more_agents-✓-7c4ff4)](#supported-tools)
 
 </div>
 
@@ -70,7 +70,13 @@ table and reality disagree.
 ## Quick start
 
 ```bash
+# Go toolchain:
 go install github.com/mcoder33/prism@latest
+
+# or, no Go required — prebuilt binary (Linux/macOS):
+curl -fsSL https://raw.githubusercontent.com/mcoder33/prism/main/install.sh | sh
+# (Windows: grab the .zip from the Releases page.)
+
 cd your-project
 prism init          # interactive TUI — pick your agents
 ```
@@ -161,9 +167,27 @@ shared `.prism/` state, so you can **propose in Claude Code and apply in Cursor*
 | **GitHub Copilot** | `.github/prompts/` | `/prism-propose` |
 | **Windsurf** | `.windsurf/workflows/` | `/prism-propose` |
 | **OpenCode** | `.opencode/command/` | `/prism-propose` |
+| **Roo Code** | `.roo/commands/` | `/prism-propose` |
+| **Cline** | `.clinerules/workflows/` | `/prism-propose.md` |
 
 Adding a tool is one `adapters.Tool` value ([internal/adapters/adapters.go](internal/adapters/adapters.go)) —
 file path + naming + frontmatter format. PRs welcome.
+
+## Team setup
+
+Two kinds of files, two different fates — this trips people up:
+
+- **Generated command files** (`.claude/commands/prism/`, `.cursor/commands/`, …) are normal repo
+  files. **Commit them** so every teammate gets the slash commands on clone, without installing anything.
+- **`.prism/`** (the `conventions.md` the commands read, plus your in-flight change artifacts) is
+  **git-excluded** — local working state. On a fresh clone it isn't there.
+
+So a teammate who clones a repo with committed commands still needs the shared conventions locally.
+The one-time bootstrap: install the CLI and run **`prism update`** (or `prism init`) once — it
+regenerates `.prism/conventions.md` in place. Run **`prism doctor`** to confirm everything lines up
+(versions match, `.prism/` is git-excluded, no stale `CURRENT`). If you'd rather not have teammates
+install the CLI at all, commit `.prism/conventions.md` too (see the archive-sharing note in the
+installed conventions for how to un-exclude selectively).
 
 ## How is this different from OpenSpec / spec-kit?
 
@@ -188,6 +212,8 @@ design itself is the risk: refactors, new subsystems, concurrency, integrations.
 prism init [path] [--tools claude,cursor|all]   # install commands (TUI without --tools)
 prism update [path] [--force]                   # regenerate after a CLI upgrade
 prism list [path]                               # list active changes in .prism/
+prism doctor [path]                             # diagnose: version drift, stale pointer, prereqs
+prism uninstall [path] [--tools …] [--shared]   # remove generated commands (keeps .prism/ work)
 ```
 
 Generated files are **tool-owned**: each carries a `prism:generated v<version>` stamp and is

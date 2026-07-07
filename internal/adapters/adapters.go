@@ -185,7 +185,28 @@ var OpenCode = Tool{
 	},
 }
 
-var All = []Tool{Claude, Cursor, Codex, Gemini, Copilot, Windsurf, OpenCode}
+var RooCode = Tool{
+	ID:          "roo",
+	Name:        "Roo Code",
+	DetectPaths: []string{".roo", ".roomodes"},
+	CommandFile: func(id string) string { return ".roo/commands/prism-" + id + ".md" },
+	CommandRef:  func(id string) string { return "/prism-" + id },
+	Format: func(w workflows.Workflow, body, version string) string {
+		return markdownWithFrontmatter(w, body, version)
+	},
+}
+
+var Cline = Tool{
+	ID:          "cline",
+	Name:        "Cline",
+	DetectPaths: []string{".clinerules"},
+	CommandFile: func(id string) string { return ".clinerules/workflows/prism-" + id + ".md" },
+	// Cline invokes a workflow by its filename, extension included.
+	CommandRef: func(id string) string { return "/prism-" + id + ".md" },
+	Format:     plainMarkdown,
+}
+
+var All = []Tool{Claude, Cursor, Codex, Gemini, Copilot, Windsurf, OpenCode, RooCode, Cline}
 
 // ByID returns the adapter with the given id, or false.
 func ByID(id string) (Tool, bool) {

@@ -6,6 +6,20 @@ step; invoke it manually to archive a change that was applied without auto-archi
 **Input**: optionally a `<change>` name. If omitted, infer from context; if ambiguous you MUST
 prompt for selection (never auto-guess).
 
+## Abandon mode (`--abandon`)
+
+`--abandon` (or the user clearly saying "drop / kill / give up on this change") archives a change
+that will **not** be finished — the missing exit for a dead-end idea, so it stops cluttering
+`prism:list` and the `prism:use` picker without a manual `rm`. It differs from a normal archive:
+
+- **Skip the task-completion check** (step 2) — an abandoned change is expected to be incomplete.
+- Record the reason: add `**Status:** abandoned — <one-line reason>, <date>` under the Phase line
+  in the change's `README.md` **before** moving it (so the archive states why it died).
+- Then run steps 3 and 5 (move + collision `-rN` + clear `.prism/CURRENT` if it points here).
+  **Skip the mini-retro** (step 4) — nothing shipped.
+- Confirm once before moving (it is not resumable in place afterwards); never abandon without an
+  explicit user go-ahead.
+
 ## Procedure
 
 1. **Resolve the change.**

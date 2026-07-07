@@ -72,3 +72,13 @@ func TestDetectPathsDeclaredForEveryTool(t *testing.T) {
 		}
 	}
 }
+
+func TestClineCommandRefCarriesExtension(t *testing.T) {
+	// Cline invokes a workflow by its filename including the .md extension.
+	if got := Cline.CommandRef("drill"); got != "/prism-drill.md" {
+		t.Errorf("cline ref = %q, want /prism-drill.md", got)
+	}
+	if got := RooCode.CommandFile("drill"); got != ".roo/commands/prism-drill.md" {
+		t.Errorf("roo path = %q", got)
+	}
+}

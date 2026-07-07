@@ -134,3 +134,69 @@ func AddToGitExclude(projectRoot string) error {
 	}
 	return err
 }
+
+// isGenerated reports whether the file at path carries the prism:generated stamp,
+// i.e. it is a prism-owned file safe to remove.
+func isGenerated(path string) bool {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	return adapters.ParseGeneratedVersion(string(b)) != ""
+}
+
+// UninstallTool removes all prism-generated command files for one tool. Only files
+// carrying the prism:generated stamp are removed — a same-named file the user
+// hand-wrote is left untouched. Now-empty prism command directories are cleaned up.
+// Returns the removed project-relative paths.
+func UninstallTool(projectRoot string, t adapters.Tool) ([]string, error) {
+	var removed []string
+	dirs := map[string]bool{}
+	for _, w := range workflows.All {
+		rel := t.CommandFile(w.ID)
+		abs := filepath.Join(projectRoot, rel)
+		if !isGenerated(abs) {
+			continue
+		}
+		if err := os.Remove(abs); err != nil {
+			return removed, fmt.Errorf("remove %s: %w", rel, err)
+		}
+		removed = append(removed, rel)
+		dirs[filepath.Dir(abs)] = true
+	}
+	// Drop now-empty command dirs (e.g. .claude/commands/prism/). os.Remove refuses
+	// non-empty dirs, so a directory shared with other files is left intact.
+	for d := range dirs {
+		_ = os.Remove(d)
+	}
+	return removed, nil
+}
+
+// UninstallShared removes .prism/conventions.md when it is prism-generated. It never
+// touches change artifacts under .prism/ — those are the user's design work.
+func UninstallShared(projectRoot string) (bool, error) {
+	abs := filepath.Join(projectRoot, ConventionsPath)
+	if !isGenerated(abs) {
+		return false, nil
+	}
+	if err := os.Remove(abs); err != nil {
+		return false, fmt.Errorf("remove %s: %w", ConventionsPath, err)
+	}
+	return true, nil
+}
+
+// IsGitExcluded reports whether .prism/ is listed in .git/info/exclude.
+// Returns false outside a git repo or when the entry is absent.
+func IsGitExcluded(projectRoot string) bool {
+	b, err := os.ReadFile(filepath.Join(projectRoot, ".git", "info", "exclude"))
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == ".prism/" || trimmed == ".prism" {
+			return true
+		}
+	}
+	return false
+}

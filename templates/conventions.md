@@ -104,6 +104,12 @@ If `.prism/CURRENT` names a slug with no matching `.prism/<change>/` directory, 
 **stale**: say so, don't invent state, and route to `prism:use` — the only command that repairs
 the pointer (rewrites or clears it).
 
+`CURRENT` is **one pointer per checkout**: two agent sessions in the same working tree share it,
+so working on different changes at once means they silently overwrite each other's active change.
+For genuinely parallel changes use a **git worktree** per change — each worktree has its own
+`.prism/` and thus its own `CURRENT`. (Passing an explicit `<change>` argument to a command
+always overrides `CURRENT` for that one invocation.)
+
 ```
 .prism/<change>/
 ├── proposal.md          seed: Why / What / Constraints+Invariants / Decisions / Non-goals  (< 1 screen)

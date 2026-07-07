@@ -1,4 +1,4 @@
-// Package cli wires the prism commands: init, update, list.
+// Package cli wires the prism commands: init, update, list, doctor, uninstall.
 package cli
 
 import (
@@ -24,7 +24,7 @@ func Execute() {
 		SilenceErrors: true,
 	}
 
-	root.AddCommand(newInitCmd(), newUpdateCmd(), newListCmd())
+	root.AddCommand(newInitCmd(), newUpdateCmd(), newListCmd(), newDoctorCmd(), newUninstallCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, red("error: "+err.Error()))

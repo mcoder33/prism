@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.6.0 — 2026-07-07
+
+Distribution and installation-lifecycle release: prism is now installable without a Go
+toolchain, ships two more agent adapters, and grows the diagnose/uninstall/abandon paths that
+were missing from the install and change lifecycles.
+
+### Added
+
+- **`prism doctor`** — read-only diagnosis of an installation: per-tool version drift vs the CLI,
+  `.prism/` git-exclude status, a stale `CURRENT` pointer, active-change inventory, and whether
+  `xmllint` (drawio validation) is present. Changes nothing.
+- **`prism uninstall`** — removes prism-generated command files (identified by their
+  `prism:generated` stamp, so hand-written files at the same path are left alone) and cleans up
+  emptied command dirs. Keeps `.prism/` design work by default; `--shared` also drops
+  `conventions.md`; `--tools` scopes to specific agents.
+- **Two agent adapters**: **Roo Code** (`.roo/commands/`) and **Cline**
+  (`.clinerules/workflows/`, invoked as `/prism-<cmd>.md`) — 9 agents supported.
+- **Prebuilt binaries**: GoReleaser config + a tag-triggered release workflow, plus `install.sh`
+  for a no-Go-toolchain install on Linux/macOS. Homebrew tap wiring is included but commented
+  until the tap repo exists.
+- **`--abandon` mode** for the archive command — the missing exit for a dead-end change: archives
+  it with an `abandoned` status and reason, skipping the task-completion check and mini-retro.
+- CI now runs the test suite on a **Linux/macOS/Windows** matrix (the path and git-exclude logic
+  is cross-platform-sensitive).
+
+### Changed
+
+- `conventions.md` documents that `.prism/CURRENT` is **one pointer per checkout** and that
+  parallel changes want a git worktree each.
+- README gains a **Team setup** section (which files to commit vs the git-excluded `.prism/`) and
+  documents the new install options and commands.
+
 ## 0.5.1 — 2026-07-07
 
 The best-practices survey in `propose` is now unconditional and chat-only: general reasoning

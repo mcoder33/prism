@@ -233,8 +233,10 @@ make help        # list all targets
 prism init --tools claude /tmp/sandbox        # smoke test
 ```
 
-CI (GitHub Actions) runs the same five checks on every push and PR; `lint` and `vuln`
-auto-install their tools, so a fresh clone only needs Go.
+CI (GitHub Actions) runs the same five checks on every push and PR — the test job across a
+Linux/macOS/Windows matrix; `lint` and `vuln` auto-install their tools, so a fresh clone only
+needs Go. Pushing a `v*` tag runs [GoReleaser](https://goreleaser.com) to publish cross-platform
+binaries to the release (see [`.goreleaser.yaml`](.goreleaser.yaml)).
 
 Layout:
 

@@ -25,6 +25,11 @@ Brings ONE part to "atomic" and generates its artifacts. Argument: `<NN-name>`.
    **GATE** — the user reacts to the digest. `[blocking]` opens must be resolved here — or
    explicitly deferred by the user: record `[deferred: <reason> — user, <date>]` in `node.md`
    (tags — in conventions). The user may also defer the whole node → status ⏸ in `README.md`.
+
+   A `[blocking]` open that neither the code nor the user can settle — only an experiment
+   can — gets a third path: propose a **spike**, a small throwaway prototype that answers
+   exactly that one question. On the user's go-ahead run it, record the answer in `node.md`
+   (one line: question → verdict), and discard the spike code — it never lands in the change.
 4. On approval: generate the remaining artifacts of the agreed tier (templates — in conventions):
    - `spec.md` — Requirement/Scenario (these also drive the tests later).
    - `detail.md` — how to implement, decision-complete (algorithm, subtleties, edge-cases, worked

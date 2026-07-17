@@ -7,7 +7,7 @@
 > This document uses the `prism:<name>` form; map it to your agent's naming.
 
 Methodology: **recursive decomposition of a problem into small nodes**, laid out across files/directories.
-We move node-by-node with gates. Large upfront docs are forbidden — they overwhelm and get skimmed.
+We move node-by-node with gates. Keep every artifact node-sized — big upfront docs overwhelm and get skimmed.
 Full reference example: any archived change under `.prism/archive/` — mirror it.
 
 ## Principles
@@ -182,7 +182,7 @@ See `data-flow.drawio` — chain of how data mutates under the chosen strategy.
 
 ### detail.md (≤ 1 screen)
 How to implement, decision-complete: algorithm/structures, subtleties, edge-cases, worked example.
-"Open (minor)" — only if genuinely open.
+"Open (minor)" — only if genuinely open. Done when a fresh implementer would ask zero questions.
 
 ### signatures.md (code sketch, no implementation)
 Signatures in a code block + **what/why** comments above each. Mark reused vs changed.
@@ -262,6 +262,10 @@ warnings by archive.
 **Un-defer**: run `prism:drill <NN>` on the ⏸ node — drill confirms the un-defer with the
 user, removes the `[deferred: …]` line and flips ⏸ → 🟡 as its entry marker, then re-drills:
 the parked question must be answered, not just unparked.
+
+**Fog test**: an Open must be a precisely formulated question — hand it to someone and they'd
+know exactly what to decide. "Something about X feels off" is fog: read code or drill until it
+sharpens into a question.
 
 ## Revision rules (scope changes mid-flow)
 

@@ -42,7 +42,13 @@ If `.prism/CURRENT` names a change (or an explicit `<change>` is given), this ve
 - Read `.prism/<change>/proposal.md` → its **Constraints & Invariants** join Step 5's invariant checks verbatim.
 - Read every part's `spec.md` → each Requirement/Scenario becomes a first-class checklist item. Map scenarios via the `## Coverage` section (written by apply; format — conventions, spec.md); if it's absent (older change), fall back to matching test names to scenario names, then write the section. Report each as `passed` / `failed` / `affected but untested`. A scenario with **no covering test** is an advisory finding; an **unmet** scenario is blocking.
 - Skip ⏸ deferred nodes — list them in the report as `skipped (deferred)`.
-- Add a **`design conformance`** group to the Step 9 report.
+- Add a **`design conformance`** group to the Step 9 report, findings kept on **two separate
+  axes** so one can't mask the other:
+  - **spec axis** — does the built behaviour do what was asked: scenarios met, `proposal.md`
+    invariants held, non-goals respected;
+  - **design-shape axis** — does the implementation match the artifacts' shape:
+    `signatures.md` respected, deviations synced per design-as-built, part boundaries intact.
+  Report each finding under its axis; a change can fail one axis while passing the other.
 - On overall **PASS**, flip applied nodes 🔵 → ✅ in the change's `README.md`.
 
 No `.prism` context → proceed project-agnostic as before, and say so in the report.

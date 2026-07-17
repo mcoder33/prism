@@ -45,8 +45,15 @@ that will **not** be finished — the missing exit for a dead-end idea, so it st
    - If `.prism/CURRENT` points to this change, clear it (no active change after archiving).
 
 4. **Mini-retro (optional, keep tiny).** If during apply/verify the design had to change
-   (deviations recorded under the design-as-built rule), propose **≤ 3 one-line additions** to the
-   project's committed agent docs (CLAUDE.md/AGENTS.md) capturing the lessons — the user decides.
+   (deviations recorded under the design-as-built rule), classify each lesson first — one
+   lesson per line, with its why — and route it by kind:
+   - **project** (about this codebase: a convention, a trap, a constraint) → propose it as one
+     of **≤ 3 one-line additions** to the committed agent docs (CLAUDE.md/AGENTS.md) — the
+     user decides;
+   - **methodology** (a prism gate, artifact, or command misfired or proved unnecessary) →
+     report it to the user as candidate feedback for prism itself (an issue/PR upstream), it
+     earns no CLAUDE.md line;
+   - **one-off** (won't recur) → drop it.
    Don't write a retro file into `.prism/` (it's git-excluded and would die locally).
 
 5. **Display summary** — change name, archive location, and any warnings (incomplete tasks).

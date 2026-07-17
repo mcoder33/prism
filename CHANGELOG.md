@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.7.0 — 2026-07-17
+
+Methodology sharpening release: split heuristics, escape hatches for stuck decisions, and a
+documented style bar for the templates themselves. Informed by a survey of mattpocock/skills
+and an internal agent kit.
+
+### Changed
+
+- **`decompose` prefers vertical slices over layers**: 01 is now a *tracer bullet* — the
+  thinnest end-to-end slice proving the pipeline — instead of "01 = foundation"; an
+  infrastructure-only part must be shared by 2+ parts to earn its slot; wide mechanical
+  refactors split as *expand–contract* (add new path → migrate callers → remove old path).
+- **`verify` design conformance reports on two separate axes** — *spec* (does the behaviour do
+  what was asked) and *design-shape* (does the implementation match the artifacts) — so one
+  can't mask the other.
+- **`archive` mini-retro classifies lessons** before routing them: *project* → CLAUDE.md/
+  AGENTS.md one-liners, *methodology* → candidate feedback for prism itself, *one-off* → drop.
+- **Conventions**: an Open item must pass the **fog test** (a precisely formulated question,
+  not a vague unease); `detail.md` gains a checkable completion criterion ("a fresh
+  implementer would ask zero questions").
+
+### Added
+
+- **Spike escape hatch** in `propose` and `drill`: a question neither the code nor the user
+  can settle — only an experiment can — becomes a small throwaway prototype answering exactly
+  that one question; the verdict is recorded, the code discarded.
+- **Frontier rounds** in the `propose` grill: on the user's request, ask every question whose
+  prerequisite decisions are already made per round, instead of strictly one at a time.
+- **`docs/template-style.md`** — the style bar for template contributions: context/cognitive
+  budgets, progressive disclosure, leading words, positive phrasing, checkable completion
+  criteria, the no-op test, rejected framings, tool neutrality.
+
 ## 0.6.0 — 2026-07-07
 
 Distribution and installation-lifecycle release: prism is now installable without a Go

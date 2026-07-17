@@ -57,7 +57,12 @@ question at a time, each one reshaping the step-2 draft. Principles (in the spir
 - Walk the decision tree, resolving dependencies between decisions **one at a time**.
 - **Ask questions one at a time.** For each question give **your recommended answer** — grounded
   in the step-1 best practices and the code, where relevant.
+- If the user asks to speed up, switch to **frontier rounds**: each round asks every question
+  whose prerequisite decisions are already made (with a recommended answer each), then
+  recompute what the answers unlocked. One-at-a-time stays the default pace.
 - If a question can be answered by **reading the code — read the code** (symbol tools/grep), don't ask.
+- A question only an experiment can answer → propose a **spike**: a throwaway prototype
+  answering exactly that one question; record the verdict in `concept.md`, discard the code.
 - For discrete choices use your interactive question tool (e.g. `AskUserQuestion` in Claude Code),
   with the recommended option first, marked as such; for open-ended formulations — plain chat.
 

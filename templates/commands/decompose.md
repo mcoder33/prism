@@ -23,7 +23,15 @@ Splits the problem into first-level parts — or drills deeper into one node.
    presenting it:
    - 2–4 parts (5+ usually means the proposal itself is too big — say so instead; exactly 1
      only for `Tier: small`);
-   - dependencies are acyclic; number in dependency order (01 = foundation);
+   - prefer **vertical slices** over layers: each part a thin but complete path through the
+     stack, observable behind a real entry point — a "data layer" part that nothing exercises
+     yet is a layer, not a slice;
+   - dependencies are acyclic; number in dependency order — **01 is the tracer bullet**: the
+     thinnest end-to-end slice that proves the whole pipeline works, which later parts widen.
+     An infrastructure-only part earns its slot only when 2+ other parts genuinely share it;
+   - a wide mechanical refactor (rename/move across many call sites) splits as
+     **expand–contract**: first part adds the new path, middle parts migrate callers in
+     groups, last part removes the old path;
    - each part independently testable and reviewable on its own;
    - comparable sizes; no "misc / the rest" bucket;
    - you can name the types/calls flowing between parts now — if you can't, the boundary is wrong.
@@ -40,5 +48,5 @@ stable (don't renumber untouched parts) → update the `README.md` table.
 
 ## Next
 
-Suggest which part to drill first (usually — the core/foundation): {{cmd:drill}} `<NN-name>`.
+Suggest which part to drill first (usually 01 — the tracer bullet): {{cmd:drill}} `<NN-name>`.
 End your turn here — do not start drilling.

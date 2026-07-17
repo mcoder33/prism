@@ -218,6 +218,8 @@ prism uninstall [path] [--tools …] [--shared]   # remove generated commands (k
 
 Generated files are **tool-owned**: each carries a `prism:generated v<version>` stamp and is
 overwritten wholesale by `prism update` — edit [templates/](templates/), not the output.
+How to write template text (budgets, style, rejected framings):
+[docs/template-style.md](docs/template-style.md).
 
 Single static binary, zero runtime dependencies, templates embedded via `go:embed`.
 

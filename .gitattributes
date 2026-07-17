@@ -1,0 +1,7 @@
+# Templates are embedded via go:embed and size-budgeted in bytes (lint_test.go);
+# a CRLF checkout inflates them past the budget and makes Windows builds differ.
+# Force LF on checkout for all text files, on every platform.
+* text=auto eol=lf
+
+*.gif binary
+*.png binary

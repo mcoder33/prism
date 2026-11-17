@@ -62,8 +62,9 @@ type Tool struct {
 	SkillRef func(workflowID string) string
 	// SkillArgsNative: the tool substitutes $ARGUMENTS in skill bodies itself.
 	SkillArgsNative bool
-	// SkillFrontmatter holds extra YAML frontmatter lines for SKILL.md.
-	SkillFrontmatter []string
+	// SkillUserOnly marks gated skills user-invoked only (Claude Code's
+	// disable-model-invocation); workflows.ModelInvocable ones stay callable by the model.
+	SkillUserOnly bool
 	// SkillExtras returns extra per-skill files, paths relative to the skill dir.
 	SkillExtras func(w workflows.Workflow, version string) []File
 	// LegacyFiles lists paths earlier prism versions generated for a workflow; they are
@@ -193,7 +194,9 @@ func (t Tool) skillMarkdown(w workflows.Workflow, body, version string) string {
 		"name: " + SkillName(w.ID),
 		"description: " + yamlQuote(w.Description),
 	}
-	lines = append(lines, t.SkillFrontmatter...)
+	if t.SkillUserOnly && !w.ModelInvocable {
+		lines = append(lines, "disable-model-invocation: true")
+	}
 	lines = append(lines,
 		"---",
 		GeneratedStamp(version),
@@ -307,8 +310,8 @@ var Claude = Tool{
 	},
 	SkillsDir:       ".claude/skills",
 	SkillArgsNative: true,
-	// prism workflows have gates and side effects: the user starts them, never the model.
-	SkillFrontmatter: []string{"disable-model-invocation: true"},
+	// gated workflows have side effects: the user starts them; sub-steps stay model-callable.
+	SkillUserOnly: true,
 }
 
 var Cursor = Tool{
@@ -339,7 +342,7 @@ var Codex = Tool{
 				"interface:",
 				"  display_name: " + yamlQuote(w.Title),
 				"policy:",
-				"  allow_implicit_invocation: false",
+				fmt.Sprintf("  allow_implicit_invocation: %t", w.ModelInvocable),
 				"",
 			}, "\n"),
 		}}

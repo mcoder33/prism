@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.8.1 — 2026-11-17
+
+Fixes found by a full end-to-end run of the chain (propose → … → archive) in Claude Code on a
+sample project.
+
+### Fixed
+
+- **apply could not chain into verify/archive under skills delivery**: every skill was
+  `disable-model-invocation`, so the model could not run the sub-steps itself. `status`, `verify`
+  and `archive` are now model-invocable (Claude Code) / implicitly invocable (Codex); gated
+  workflows stay user-only.
+- **Scratch dirs counted as changes**: smoke binaries the agent left under `.prism/` showed up as
+  active changes in `prism status`/`list`. Only dirs with `README.md`, `proposal.md` or
+  `concept.md` count now, and `apply`/`verify` put scratch files in the OS temp dir.
+- **No path past PASS_WITH_FINDINGS**: a verdict whose remaining findings are advisory or
+  pre-existing can now be accepted by the user → ✅ and archive.
+- `prism check` during propose reports a missing README as `propose_in_progress` (warning),
+  not an error.
+
+### Changed
+
+- `propose` sketches any early split as vertical slices (the e2e run proposed layers there and
+  decompose had to overturn them).
+- The `apply` forecast separates code and test LOC (tests were 60% of the actual diff).
+
 ## 0.8.0 — 2026-11-17
 
 Distribution and determinism release. Agent Skills became the cross-tool standard (OpenSpec

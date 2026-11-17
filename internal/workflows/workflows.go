@@ -10,7 +10,7 @@ import (
 
 // Version of the prism CLI; stamped into every generated file.
 // Overridable at build time: -ldflags "-X .../internal/workflows.Version=x.y.z".
-var Version = "0.8.0"
+var Version = "0.8.1"
 
 // Workflow is one prism command installed into agents as a slash command.
 type Workflow struct {
@@ -20,6 +20,9 @@ type Workflow struct {
 	Title string
 	// Description is the one-liner shown by agents in command pickers.
 	Description string
+	// ModelInvocable: another workflow invokes this one as a sub-step (apply → verify →
+	// archive) or it is read-only (status), so skill deliveries must not make it user-only.
+	ModelInvocable bool
 }
 
 var All = []Workflow{
@@ -37,8 +40,9 @@ var All = []Workflow{
 			"decomposition change.",
 	},
 	{
-		ID:    "status",
-		Title: "PRISM: Status",
+		ID:             "status",
+		ModelInvocable: true,
+		Title:          "PRISM: Status",
 		Description: "Where the active change stands — phase, node table cross-checked against " +
 			"reality, blockers, the single next command; offers a gated repair plan when the table " +
 			"and reality disagree. The re-entry point after a break.",
@@ -68,8 +72,9 @@ var All = []Workflow{
 			"tasks done and running checks.",
 	},
 	{
-		ID:    "verify",
-		Title: "PRISM: Verify",
+		ID:             "verify",
+		ModelInvocable: true,
+		Title:          "PRISM: Verify",
 		Description: "Post-implementation verification on a running dev environment at a chosen " +
 			"depth (--checks low|high) — full test suite, blocking static checks, diff-driven " +
 			"functional and browser smoke, concurrency checks, load corner-cases at high, an " +
@@ -77,9 +82,10 @@ var All = []Workflow{
 			"report. Project-agnostic: commands and entry points are detected from repository configs.",
 	},
 	{
-		ID:          "archive",
-		Title:       "PRISM: Archive",
-		Description: "Archive a completed change — move .prism/<change>/ to .prism/archive/<change>/.",
+		ID:             "archive",
+		ModelInvocable: true,
+		Title:          "PRISM: Archive",
+		Description:    "Archive a completed change — move .prism/<change>/ to .prism/archive/<change>/.",
 	},
 }
 

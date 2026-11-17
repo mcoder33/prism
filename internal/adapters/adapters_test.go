@@ -138,12 +138,12 @@ func TestCodexIsSkillsOnlyWithDollarRefs(t *testing.T) {
 	}
 	hasPolicy := false
 	for _, f := range files {
-		if strings.HasSuffix(f.Path, "agents/openai.yaml") && strings.Contains(f.Content, "allow_implicit_invocation: false") {
+		if strings.HasSuffix(f.Path, "agents/openai.yaml") && strings.Contains(f.Content, "allow_implicit_invocation: true") {
 			hasPolicy = true
 		}
 	}
 	if !hasPolicy {
-		t.Error("codex skill lacks agents/openai.yaml with implicit invocation disabled")
+		t.Error("codex verify skill must stay implicitly invocable (apply chains into it)")
 	}
 	if got := Codex.LegacyFiles("drill"); len(got) != 1 || got[0] != ".codex/prompts/prism-drill.md" {
 		t.Errorf("codex legacy = %v", got)
@@ -161,8 +161,14 @@ func TestClaudeSkillKeepsArgumentsAndIsUserInvoked(t *testing.T) {
 	if !strings.Contains(skill, "$ARGUMENTS") {
 		t.Error("claude skill should keep $ARGUMENTS (expanded natively)")
 	}
-	if !strings.Contains(skill, "disable-model-invocation: true") {
-		t.Error("claude skill should be user-invoked only")
+	if strings.Contains(skill, "disable-model-invocation") {
+		t.Error("claude verify skill must stay model-invocable: apply runs it as a sub-step")
+	}
+	for _, w := range workflows.All {
+		got := strings.Contains(Claude.Render(Skills, w, "0.0.0")[0].Content, "disable-model-invocation: true")
+		if got == w.ModelInvocable {
+			t.Errorf("%s: user-only = %v, want %v", w.ID, got, !w.ModelInvocable)
+		}
 	}
 	if !strings.Contains(skill, "`/prism-") {
 		t.Error("claude skill refs should use /prism-<id>")

@@ -62,7 +62,9 @@ If `.prism/CURRENT` names a change (or an explicit `<change>` is given), this ve
   - **design-shape axis** — does the implementation match the artifacts' shape:
     `signatures.md` respected, deviations synced per design-as-built, part boundaries intact.
   Report each finding under its axis; a change can fail one axis while passing the other.
-- On overall **PASS**, flip applied nodes 🔵 → ✅ in the change's `README.md`.
+- On overall **PASS**, flip applied nodes 🔵 → ✅ in the change's `README.md`. On
+  **PASS_WITH_FINDINGS** whose remaining findings are advisory or pre-existing, ask the user to
+  accept them; on an explicit yes record the acceptance in `verify.md` and flip the same way.
 
 No `.prism` context → proceed project-agnostic as before, and say so in the report.
 
@@ -125,6 +127,8 @@ Run **every** touched entry point with a real call in the detected mode. Coverag
 - **HTTP mode**: hosts/ports/routes from project configs. Call with the methods declared for the route; corner-cases — valid, invalid, empty/boundary values, duplicates, missing entities, wrong method/content-type, large payload.
 - **CLI mode**: run the command with valid and boundary arguments, check exit-code and output (including on erroneous input).
 - **Behavioural mode** (consumer/daemon/outbound): submit a test input event, confirm the service processes it, observe the expected outgoing effect; if a local receiver stub (echo/mock) is present — verify the expected request arrived there. Edge cases: malformed/partial event, duplicate, volume spike (overlaps with Step 5).
+- **Scratch files** (built binaries, probe programs, stores, logs) go in a fresh dir under the OS
+  temp dir — never under `.prism/` (it holds only changes) or the repo tree.
 - **Test data**: always tag recognizably (distinguishable prefix/test ID range). Delete created data at the end by default; with `--keep-test-data` — leave it. Anything not deleted — report.
 - If test data/token/host/dependency is missing for a specific point — skip with reason (verdict does not fail). Failure due to a code defect is NOT a skip, it is a blocking finding.
 

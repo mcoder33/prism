@@ -198,7 +198,7 @@ Legal transitions and their owners — no other flips are valid:
 | ⚪ → 🟡 | drill | step 1, BEFORE reading code (crash-resume marker) |
 | 🟡 → 🟢 | drill | after all tier artifacts are written |
 | 🟢 → 🔵 | apply | immediately AFTER that part's commit succeeds |
-| 🔵 → ✅ | verify | on overall PASS, all applied nodes at once |
+| 🔵 → ✅ | verify | on PASS (or PASS_WITH_FINDINGS the user accepts), all applied nodes at once |
 | any → ⏸ | drill / integrate | the user explicitly defers the node at a gate |
 | ⏸ → 🟡 | drill | un-defer: the user resumes the node (see Open tags) |
 | 🟢 → 🟡 | drill | re-drill: design rework before apply |

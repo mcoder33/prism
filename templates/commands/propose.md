@@ -47,7 +47,8 @@ grep), never in a vacuum. This is a first cut, not the final word: the grill (st
 > **Tier**: the initial proposal tells you the change's size — propose its tier
 > (`small | standard`; criteria — conventions, Change tiers). The user confirms it at the gate
 > (step 4); the confirmed value becomes the `**Tier:**` line in `README.md`. For **small**: keep
-> the data flow as text in `concept.md` — no `data-flow.drawio`.
+> the data flow as text in `concept.md` — no `data-flow.drawio`. If you sketch a split to size
+> it, sketch vertical slices with 01 as the tracer bullet (see {{cmd:decompose}}) — never layers.
 
 ## Step 3 — grill: evolve the proposal
 

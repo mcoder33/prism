@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/mcoder33/prism/internal/change"
 	"github.com/mcoder33/prism/internal/installer"
 )
 
@@ -42,7 +43,7 @@ func runList(projectRoot string) error {
 
 	var changes []string
 	for _, e := range entries {
-		if e.IsDir() && e.Name() != "archive" {
+		if e.IsDir() && e.Name() != "archive" && change.IsChangeDir(filepath.Join(prismDir, e.Name())) {
 			changes = append(changes, e.Name())
 		}
 	}

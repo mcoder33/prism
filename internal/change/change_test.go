@@ -217,3 +217,37 @@ func TestShippedExampleIsClean(t *testing.T) {
 		t.Errorf("example parsed wrong: %+v", c)
 	}
 }
+
+// Scratch dirs an agent leaves under .prism/ (smoke binaries, probe programs) are not changes.
+func TestActiveIgnoresScratchDirs(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, map[string]string{
+		".prism/real/concept.md":  "# Concept",
+		".prism/smoke/notes.json": "[]",
+		".prism/archive/x/a.md":   "x",
+	})
+	if got := strings.Join(Active(root), ","); got != "real" {
+		t.Fatalf("Active = %q, want real", got)
+	}
+	if n, err := Resolve(root, ""); err != nil || n != "real" {
+		t.Errorf("Resolve = %q, %v", n, err)
+	}
+}
+
+// Mid-propose (only concept.md) a missing README is expected, not an error.
+func TestProposeInProgressIsWarning(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, map[string]string{".prism/p/concept.md": "# Concept"})
+	c, err := Load(root, "p")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Errors() != 0 || codes(c.Findings) != "propose_in_progress" {
+		t.Fatalf("findings = %v", c.Findings)
+	}
+	write(t, root, map[string]string{".prism/p/proposal.md": "# P"})
+	c, _ = Load(root, "p")
+	if codes(c.Findings) != "readme_missing" || c.Errors() != 1 {
+		t.Fatalf("with proposal.md: %v", c.Findings)
+	}
+}

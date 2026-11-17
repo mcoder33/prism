@@ -28,11 +28,12 @@ Implements the change in code based on the designed artifacts.
    and the default branch has moved — merge/rebase it in first, resolving conflicts per the
    design artifacts, not ad hoc. Then update `README.md` Phase → **apply**.
    **Forecast** (first entry only — never rewrite it): add under the Branch line
-   `**Forecast:** ~<LOC> changed LOC · ~<N> files · risk: <the one thing most likely to force a
+   `**Forecast:** ~<code> + ~<test> changed LOC · ~<N> files · risk: <the one thing most likely to force a
    design change>`, estimated from the artifacts. Archive compares it with the actual — it
    calibrates the atomicity bounds on real data instead of feel.
 4. Implement **in dependency order**, part by part:
    - write code per `signatures.md`/`detail.md`, using `spec.md` as acceptance criteria;
+   - manual runs and smoke builds use a fresh dir under the OS temp dir, never `.prism/`;
    - write tests per scenarios from `spec.md` — name each test after its scenario, and record
      each scenario in the part's `spec.md` `## Coverage` section as you check off the task
      (format — conventions, spec.md), so {{cmd:verify}} can trace coverage;
@@ -52,7 +53,7 @@ Implements the change in code based on the designed artifacts.
    environment (functional smoke, concurrency/load checks); static checks and the full test run
    already happened in steps 5/7. Fix blocking findings and re-verify.
 9. **Archive the change automatically**: once every task passes, the project checks are green and
-   verification is PASS, run {{cmd:archive}} `<change>` to move `.prism/<change>/` →
+   verification is PASS (or PASS_WITH_FINDINGS the user accepted), run {{cmd:archive}} `<change>` to move `.prism/<change>/` →
    `.prism/archive/<change>/`. This keeps `.prism/` showing only active changes.
 
 ## Parallel mode (`--parallel`, opt-in)

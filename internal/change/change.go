@@ -106,12 +106,23 @@ func Active(projectRoot string) []string {
 	}
 	var out []string
 	for _, e := range entries {
-		if e.IsDir() && e.Name() != "archive" {
+		if e.IsDir() && e.Name() != "archive" && IsChangeDir(filepath.Join(projectRoot, PrismDir, e.Name())) {
 			out = append(out, e.Name())
 		}
 	}
 	sort.Strings(out)
 	return out
+}
+
+// IsChangeDir reports whether dir holds a change (rather than stray scratch files): propose
+// writes concept.md first, then proposal.md and README.md.
+func IsChangeDir(dir string) bool {
+	for _, f := range []string{"README.md", "proposal.md", "concept.md"} {
+		if _, err := os.Stat(filepath.Join(dir, f)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // ErrNoChange means no change could be resolved without guessing.
@@ -158,7 +169,12 @@ func Load(projectRoot, name string) (*Change, error) {
 	}
 	c.GitBranch = gitBranch(projectRoot)
 	if err := c.readREADME(dir); err != nil {
-		c.add(Error, "readme_missing", "README.md", "README.md not found — the change has no state table yet")
+		if _, perr := os.Stat(filepath.Join(dir, "proposal.md")); perr != nil {
+			c.add(Warning, "propose_in_progress", "README.md",
+				"no README.md yet — propose writes it at its confirm gate")
+		} else {
+			c.add(Error, "readme_missing", "README.md", "proposal.md exists but README.md (the state table) is missing")
+		}
 	}
 	c.joinNodes(dir)
 	if n, ok := countTasks(filepath.Join(dir, "tasks.md")); ok {

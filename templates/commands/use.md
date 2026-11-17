@@ -2,7 +2,7 @@ Selects the **active change** — the prism analog of the current git branch. Th
 persisted in `.prism/CURRENT` (like `.git/HEAD`), so it survives across sessions and **every other
 prism command and all design writing target it by default**, without re-specifying the name.
 
-**Read first**: `.prism/conventions.md` (if missing, run `prism update`).
+**Read first**: {{conventions}} (if missing, run `prism update`).
 
 ## Input / actions
 
@@ -44,3 +44,6 @@ prism command and all design writing target it by default**, without re-specifyi
 - {{cmd:propose}} sets the new change active automatically; {{cmd:archive}} clears it if it
   archived the active change.
 - `.prism/` (including `CURRENT`) is not committed — it's local working state.
+- **Handing off an active change** to a teammate: they receive `.prism/<change>/` out of band
+  (temporary branch, archive file), drop it into their `.prism/`, run {{cmd:use}} `<change>`,
+  then {{cmd:status}} to resume.

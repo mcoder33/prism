@@ -78,10 +78,12 @@ curl -fsSL https://raw.githubusercontent.com/mcoder33/prism/main/install.sh | sh
 # (Windows: grab the .zip from the Releases page.)
 
 cd your-project
-prism init          # interactive TUI — pick your agents
+prism init                     # interactive TUI — pick your agents (press d to pick delivery)
+prism init --delivery skills   # or: Agent Skills folders, conventions bundled — commit and share
 ```
 
-Then, inside your agent:
+Then, inside your agent (shown as Claude Code commands; skills are `/prism-propose`, and
+`$prism-propose` in Codex):
 
 ```
 /prism:propose      # describe the problem, get a 1-screen seed proposal (+ change tier)
@@ -92,6 +94,10 @@ Then, inside your agent:
 /prism:verify       # pedantic QA on a running dev env: tests, smoke, concurrency, load
 /prism:status       # where am I — phase, node table vs reality, the one next action
 ```
+
+The CLI also reads what the agent writes: `prism status` cross-checks the state table against
+the node files, and `prism check` validates the artifacts (drawio XML, spec scenarios, Open
+tags, atomicity bounds) — deterministic checks the agent runs instead of eyeballing Markdown.
 
 All design artifacts live in `.prism/` at the repo root — **git-excluded automatically**,
 it's local working state. (Optionally a project can commit `.prism/archive/` as shared
@@ -119,7 +125,7 @@ else is generated (trivial nodes skip the diagram and spec). Here's what that lo
 <p align="center"><img src="assets/drill-node.png" width="680" alt="node.md: What / Logic / Guarantees / Input-output digest, status, open questions"></p>
 
 **`concept.drawio` — a real diagram, not ASCII art.** The agent hand-crafts mxGraph XML and
-validates it with `xmllint`. Open it in draw.io or the VS Code extension:
+validates it with `prism check`. Open it in draw.io or the VS Code extension:
 
 <p align="center"><img src="assets/drill-concept.png" width="760" alt="concept.drawio: request flows through middleware to Limiter.Allow, lazy refill, allow/deny branches"></p>
 
@@ -155,27 +161,45 @@ in `.prism/CURRENT`, and every command targets it automatically.
 
 ## Supported tools
 
-One `prism init` installs native slash commands for every agent you use — same methodology,
-shared `.prism/` state, so you can **propose in Claude Code and apply in Cursor**.
+One `prism init` installs the workflow for every agent you use — same methodology, shared
+`.prism/` state, so you can **propose in Claude Code and apply in Cursor**. Two deliveries:
 
-| Tool | Commands | Invocation |
+- **commands** (default where the tool has them) — one slash-command file per workflow; they
+  read the shared `.prism/conventions.md`.
+- **skills** (`--delivery skills`) — one [Agent Skills](https://agentskills.io) folder per
+  workflow, `prism-<name>/SKILL.md` plus a bundled `references/conventions.md`. Self-contained:
+  commit them and teammates need nothing else. In Claude Code and Codex the skills are
+  user-invoked only — the model never starts a gated workflow on its own.
+
+| Tool | Commands → invocation | Skills → invocation |
 |---|---|---|
-| **Claude Code** | `.claude/commands/prism/` | `/prism:propose` |
-| **Cursor** | `.cursor/commands/` | `/prism-propose` |
-| **Codex CLI** | `.codex/prompts/` | `/prism-propose` |
-| **Gemini CLI** | `.gemini/commands/prism/` | `/prism:propose` |
-| **GitHub Copilot** | `.github/prompts/` | `/prism-propose` |
-| **Windsurf** | `.windsurf/workflows/` | `/prism-propose` |
-| **OpenCode** | `.opencode/command/` | `/prism-propose` |
-| **Roo Code** | `.roo/commands/` | `/prism-propose` |
-| **Cline** | `.clinerules/workflows/` | `/prism-propose.md` |
+| **Claude Code** | `.claude/commands/prism/` → `/prism:propose` | `.claude/skills/` → `/prism-propose` |
+| **Cursor** | `.cursor/commands/` → `/prism-propose` | `.cursor/skills/` → `/prism-propose` |
+| **Codex CLI** | — (skills only) | `.agents/skills/` → `$prism-propose` |
+| **Gemini CLI** | `.gemini/commands/prism/` → `/prism:propose` | `.gemini/skills/` → `/prism-propose` |
+| **GitHub Copilot** | `.github/prompts/` → `/prism-propose` | `.github/skills/` → `/prism-propose` |
+| **Windsurf** | `.windsurf/workflows/` → `/prism-propose` | — |
+| **OpenCode** | `.opencode/command/` → `/prism-propose` | `.opencode/skills/` → `/prism-propose` |
+| **Roo Code** | `.roo/commands/` → `/prism-propose` | `.roo/skills/` → `/prism-propose` |
+| **Cline** | `.clinerules/workflows/` → `/prism-propose.md` | `.cline/skills/` → `/prism-propose` |
+
+**Codex is skills-only**: Codex deprecated custom prompts and only ever read them from
+`~/.codex/prompts/`, so the project-level `.codex/prompts/` files prism ≤ 0.7 wrote were never
+loaded. `prism update` migrates them to `.agents/skills/` and removes the old files.
+
+Switch an installed project with `prism update --delivery skills|commands` — the other
+delivery's generated files are removed; hand-written files are never touched.
 
 Adding a tool is one `adapters.Tool` value ([internal/adapters/adapters.go](internal/adapters/adapters.go)) —
-file path + naming + frontmatter format. PRs welcome.
+paths, naming, frontmatter format, skills folder. PRs welcome.
 
 ## Team setup
 
-Two kinds of files, two different fates — this trips people up:
+**Simplest: skills.** Run `prism init --delivery skills` and commit the generated skill folders.
+Each bundles its own conventions, so a teammate's clone works with no CLI installed. Only your
+in-flight change artifacts stay local in `.prism/`.
+
+**With commands**, two kinds of files have two different fates — this trips people up:
 
 - **Generated command files** (`.claude/commands/prism/`, `.cursor/commands/`, …) are normal repo
   files. **Commit them** so every teammate gets the slash commands on clone, without installing anything.
@@ -192,16 +216,16 @@ installed conventions for how to un-exclude selectively).
 ## How is this different from OpenSpec / spec-kit?
 
 [OpenSpec](https://github.com/Fission-AI/OpenSpec) and [spec-kit](https://github.com/github/spec-kit)
-pioneered spec-driven AI development, and PRISM borrows the installer model from them.
+pioneered spec-driven AI development; PRISM follows them in shipping as Agent Skills.
 The difference is the shape of the artifact:
 
 |  | Spec-driven (OpenSpec, spec-kit) | **PRISM** |
 |---|---|---|
 | Unit of review | a spec document | a **5-7 line node** |
 | Structure | flat: spec → tasks | **recursive tree**, drill until atomic |
-| Decision style | options to evaluate | **one decision to react to** |
+| Gates | approve the generated document | **hard stop per node**; a fork is closed only by a chosen outcome |
 | Depth control | fixed | per-node — drill only where it's murky |
-| Post-implementation | done at merge | **`verify`**: tests, smoke, concurrency, load |
+| Post-implementation | done at merge | **`verify`** at `--checks low\|high`, independent design review |
 
 If your changes are small, spec-driven is enough. PRISM earns its keep on changes where the
 design itself is the risk: refactors, new subsystems, concurrency, integrations.
@@ -209,11 +233,14 @@ design itself is the risk: refactors, new subsystems, concurrency, integrations.
 ## CLI reference
 
 ```bash
-prism init [path] [--tools claude,cursor|all]   # install commands (TUI without --tools)
-prism update [path] [--force]                   # regenerate after a CLI upgrade
+prism init [path] [--tools claude,cursor|all] [--delivery skills|commands]
+                                                # install (TUI without --tools)
+prism update [path] [--force] [--delivery …]    # regenerate after a CLI upgrade / switch delivery
 prism list [path]                               # list active changes in .prism/
-prism doctor [path]                             # diagnose: version drift, stale pointer, prereqs
-prism uninstall [path] [--tools …] [--shared]   # remove generated commands (keeps .prism/ work)
+prism status [path] [--change X] [--json]       # state table cross-checked against the files
+prism check [path] [--change X] [--json]        # validate artifacts; exits 1 on errors
+prism doctor [path]                             # diagnose: version drift, old layouts, stale pointer
+prism uninstall [path] [--tools …] [--shared]   # remove generated files (keeps .prism/ work)
 ```
 
 Generated files are **tool-owned**: each carries a `prism:generated v<version>` stamp and is
@@ -247,8 +274,9 @@ main.go                      entrypoint → internal/cli
 templates/                   tool-neutral command bodies + shared conventions (go:embed)
 internal/
   workflows/                 command registry (id, title, description) + Version
-  adapters/                  per-tool: paths, slash-command naming, frontmatter
-  installer/                 detection, rendering, writing, git-exclude
+  adapters/                  per-tool: command + skill paths, invocation naming, frontmatter
+  installer/                 detection, delivery migration, writing, git-exclude
+  change/                    reads .prism/<change>/: state table, findings (status, check)
   cli/                       cobra commands + bubbletea TUI
 ```
 

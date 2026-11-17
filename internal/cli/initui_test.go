@@ -31,7 +31,7 @@ func TestNewInitModelPreselectsDetectedTools(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, ".claude"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	m := newInitModel(root)
+	m := newInitModel(root, "")
 	for i, tl := range adapters.All {
 		want := tl.ID == "claude"
 		if m.selected[i] != want {
@@ -41,7 +41,7 @@ func TestNewInitModelPreselectsDetectedTools(t *testing.T) {
 }
 
 func TestPickNavigationToggleAndCancel(t *testing.T) {
-	m := newInitModel(t.TempDir())
+	m := newInitModel(t.TempDir(), "")
 
 	m, _ = update(t, m, key(tea.KeyDown))
 	m, _ = update(t, m, key(tea.KeyDown))
@@ -82,7 +82,7 @@ func TestPickNavigationToggleAndCancel(t *testing.T) {
 }
 
 func TestEnterBuildsInstallQueue(t *testing.T) {
-	m := newInitModel(t.TempDir())
+	m := newInitModel(t.TempDir(), "")
 	m.selected[0] = true // Claude
 
 	m, cmd := update(t, m, key(tea.KeyEnter))
@@ -102,7 +102,7 @@ func TestEnterBuildsInstallQueue(t *testing.T) {
 }
 
 func TestEnterWithNothingSelectedQuits(t *testing.T) {
-	m := newInitModel(t.TempDir())
+	m := newInitModel(t.TempDir(), "")
 	m, _ = update(t, m, key(tea.KeyEnter))
 	if m.phase != phasePick {
 		t.Fatal("phase must stay phasePick when nothing is selected")
@@ -110,7 +110,7 @@ func TestEnterWithNothingSelectedQuits(t *testing.T) {
 }
 
 func TestStepDoneAdvancesToDone(t *testing.T) {
-	m := newInitModel(t.TempDir())
+	m := newInitModel(t.TempDir(), "")
 	m.selected[0] = true
 	m, _ = update(t, m, key(tea.KeyEnter))
 
@@ -130,7 +130,7 @@ func TestStepDoneAdvancesToDone(t *testing.T) {
 }
 
 func TestStepDoneErrorAborts(t *testing.T) {
-	m := newInitModel(t.TempDir())
+	m := newInitModel(t.TempDir(), "")
 	m.selected[0] = true
 	m, _ = update(t, m, key(tea.KeyEnter))
 
@@ -141,7 +141,7 @@ func TestStepDoneErrorAborts(t *testing.T) {
 }
 
 func TestViewByPhase(t *testing.T) {
-	m := newInitModel(t.TempDir())
+	m := newInitModel(t.TempDir(), "")
 	pick := m.View()
 	for _, want := range []string{"Select tools", "Claude Code", "space toggle"} {
 		if !strings.Contains(pick, want) {

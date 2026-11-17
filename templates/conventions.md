@@ -3,8 +3,12 @@
 > Read this first when running any prism command. It defines the artifact formats,
 > layout, and rules so the individual commands stay short.
 >
-> Command naming depends on your agent: namespaced (`/prism:use`) or flat (`/prism-use`).
-> This document uses the `prism:<name>` form; map it to your agent's naming.
+> Naming depends on your agent: a command (`/prism:use`, `/prism-use`) or a skill
+> (`/prism-use`; `$prism-use` in Codex). This document writes `prism:<name>` — map it.
+>
+> **CLI helpers** (use when `prism` is on PATH; otherwise do the same check by hand):
+> `prism status --json` — the state table cross-checked against the files;
+> `prism check` — drawio XML, spec scenarios, Open tags, atomicity bounds.
 
 Methodology: **recursive decomposition of a problem into small nodes**, laid out across files/directories.
 We move node-by-node with gates. Keep every artifact node-sized — big upfront docs overwhelm and get skimmed.
@@ -75,20 +79,8 @@ if missing, and `.prism/` is added to `.git/info/exclude` (artifacts are never c
 - **Archived** change (after `prism:apply` completes): `.prism/archive/<change>/` — `apply` moves
   the whole change folder there automatically once all tasks pass.
 
-### Sharing archives (optional, per-project decision)
-
-`.git/info/exclude` is per-clone: by default archives die with the machine. To share archived
-designs as team reference, remove `.prism` from `.git/info/exclude` and add to `.gitignore`:
-
-    .prism/*
-    !.prism/archive/
-
-Active changes stay local either way; durable lessons go to committed agent docs via the
-archive mini-retro regardless.
-
-Handing off an ACTIVE change to a teammate: copy `.prism/<change>/` to them out of band
-(temporary branch, archive file); they drop it into their `.prism/`, run `prism:use <change>`,
-then `prism:status` to resume.
+Sharing archives with the team (opt-in) — see `prism:archive`; handing off an active change —
+see `prism:use`.
 
 ### Current change pointer (`.prism/CURRENT`)
 
@@ -97,24 +89,21 @@ branch (`.git/HEAD`). Set/switched/cleared by `prism:use`, set by `prism:propose
 `prism:archive` when the active change is archived. Persisted on disk across sessions.
 
 **Every prism command resolves `<change>` from `.prism/CURRENT` when no explicit name is
-given** (if it's also empty, the command asks — it never guesses). So once you run `prism:use <change>`,
-all subsequent decomposition work and design writing target that change automatically.
+given** (if it's also empty, the command asks — it never guesses).
 
 If `.prism/CURRENT` names a slug with no matching `.prism/<change>/` directory, the pointer is
 **stale**: say so, don't invent state, and route to `prism:use` — the only command that repairs
 the pointer (rewrites or clears it).
 
-`CURRENT` is **one pointer per checkout**: two agent sessions in the same working tree share it,
-so working on different changes at once means they silently overwrite each other's active change.
-For genuinely parallel changes use a **git worktree** per change — each worktree has its own
-`.prism/` and thus its own `CURRENT`. (Passing an explicit `<change>` argument to a command
-always overrides `CURRENT` for that one invocation.)
+`CURRENT` is **one pointer per checkout**: two sessions in one working tree overwrite each
+other's active change. Parallel changes want a **git worktree** each (own `.prism/`, own
+`CURRENT`). An explicit `<change>` argument overrides `CURRENT` for that one invocation.
 
 ```
 .prism/<change>/
 ├── proposal.md          seed: Why / What / Constraints+Invariants / Decisions / Non-goals  (< 1 screen)
 ├── concept.md           candidate strategies + chosen/rejected (made in prism:propose)
-├── data-flow.drawio     conceptual data-mutation chain for the chosen strategy (xmllint)
+├── data-flow.drawio     conceptual data-mutation chain for the chosen strategy
 ├── README.md            tree map + status table + cycle rules
 ├── NN-name/             node (part) — artifact set per tier (see Node artifact tiers)
 │   ├── node.md          5–7 line digest (always)
@@ -243,7 +232,7 @@ resume point (`prism:status` reads it); if it lies, resume lies.
 
 `**Branch:** <name>` — added under the Tier line by `prism:apply` when it creates the feature
 branch; other commands compare it against the current git branch and warn on mismatch (they
-never switch branches themselves).
+never switch branches themselves). `**Forecast:**` — set once by `prism:apply`, read by archive.
 
 ## Open tags
 
@@ -267,6 +256,12 @@ the parked question must be answered, not just unparked.
 know exactly what to decide. "Something about X feels off" is fog: read code or drill until it
 sharpens into a question.
 
+**Closing a fork**: a `[blocking]` Open is resolved only by a chosen outcome — the user's
+answer, or a verified fact that settles it — covering the whole affected scope (a partial answer
+closes only its part). A route to a decision is not a decision: "decide during testing", an
+assigned owner, a deadline, "both options cost the same", or a planned report leave it
+`[blocking]`. Never relabel it `[minor]` or a risk to get past a gate.
+
 ## Revision rules (scope changes mid-flow)
 
 - Requirements changed after decompose/integrate → re-enter `prism:propose` in **amendment
@@ -285,14 +280,14 @@ sharpens into a question.
 ## Formatting (mandatory)
 
 - Each item on its own line (bulleted lists `-`, blank lines between sections).
-- Do NOT chain multiple `**Label:**` entries without separators — they collapse into one paragraph and are hard to read.
+- Put each `**Label:**` entry on its own line — chained labels collapse into one unreadable paragraph.
 
 ## drawio
 
 - Hand-craft mxGraph (`<mxfile><diagram><mxGraphModel><root>…`). Nodes `vertex="1"`, edges `edge="1"`.
 - Avoid raw `&`, `<`, `>` in labels.
-- **After writing always** validate: `xmllint --noout <file>.drawio` (fallback: parse with
-  python3 `xml.dom.minidom`, or re-read carefully for unclosed tags and raw entities).
+- **After writing always** validate: `prism check` (else `xmllint --noout <file>.drawio`, else
+  python3 `xml.dom.minidom`).
 
 Two root diagrams, different purpose (don't conflate):
 

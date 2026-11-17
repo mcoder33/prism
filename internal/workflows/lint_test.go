@@ -161,3 +161,31 @@ func TestStatusTransitionsLegal(t *testing.T) {
 		}
 	}
 }
+
+// Bodies must name the conventions file through {{conventions}} — the path differs per
+// delivery (shared .prism/conventions.md for commands, a bundled copy for skills).
+func TestBodiesUseConventionsPlaceholder(t *testing.T) {
+	for _, w := range All {
+		body := Body(w.ID)
+		if strings.Contains(body, "`.prism/conventions.md`") {
+			t.Errorf("%s hardcodes .prism/conventions.md — use {{conventions}}", w.ID)
+		}
+		if !strings.Contains(body, "{{conventions}}") {
+			t.Errorf("%s never points at {{conventions}}", w.ID)
+		}
+	}
+}
+
+// Only {{cmd:<id>}} and {{conventions}} are resolved at install time; anything else would
+// leak into the agent verbatim.
+var anyPlaceholder = regexp.MustCompile(`\{\{[^}]*\}\}`)
+
+func TestNoUnknownPlaceholders(t *testing.T) {
+	for id, body := range allBodies() {
+		for _, m := range anyPlaceholder.FindAllString(body, -1) {
+			if m != "{{conventions}}" && !cmdRefPattern.MatchString(m) {
+				t.Errorf("%s contains unknown placeholder %s", id, m)
+			}
+		}
+	}
+}

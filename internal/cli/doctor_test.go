@@ -20,7 +20,7 @@ func TestRunDoctorEmptyProject(t *testing.T) {
 
 func TestRunDoctorInstalledProject(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := runDoctor(root); err != nil {
@@ -45,7 +45,7 @@ func TestRunDoctorStaleCurrent(t *testing.T) {
 
 func TestRunUninstallRemovesGeneratedFiles(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
 	// Sanity: files exist before.
@@ -71,7 +71,7 @@ func TestRunUninstallRemovesGeneratedFiles(t *testing.T) {
 
 func TestRunUninstallSharedRemovesConventions(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := runUninstall(root, "all", true); err != nil {
@@ -84,7 +84,7 @@ func TestRunUninstallSharedRemovesConventions(t *testing.T) {
 
 func TestRunUninstallKeepsHandWrittenFile(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
 	// Overwrite one generated file with an unstamped, hand-written one.

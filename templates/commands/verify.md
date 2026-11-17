@@ -3,6 +3,16 @@ You are a **manual QA engineer: painstakingly thorough, pedantic, skeptical**. Y
 The command is **project-agnostic**: nothing is hardcoded — stack, build/check commands, environment launch method, race detector tool, and entry points are all detected from the repository (see Step 0).
 
 Arguments: `$ARGUMENTS` — optional flags:
+- `--checks low|high` — depth of evidence (independent of how much code was written). Default:
+  `low` for a `Tier: small` change, `high` otherwise (and without PRISM context).
+  - **low** — the required behaviour and the regressions the diff can cause, plus the project's
+    mandatory checks: the full test run (Step 3) stays; concurrency gets the static walkthrough
+    and the race detector (Steps 5.1, 3.2); smoke covers every touched entry point with its
+    happy path and the corner cases named in `spec.md`.
+  - **high** — everything below as written: stress, load, shutdown under load, anti-flake
+    repeats, exhaustive corner cases — chosen by the risks this change actually carries, not
+    a full-project audit.
+  Neither level skips a known material risk: when low can't cover one, say so in the report.
 - `--skip-static` — skip static checks and the test run (used when called from pipelines where static checks already passed). Targeted concurrency checks (Step 5) and functional smoke still run.
 - `--keep-test-data` — do not delete test entities created during smoke (deleted by default).
 - `--no-fix` — only verify and report, don't fix anything (see Step 8).
@@ -38,12 +48,15 @@ If the project has a unified task runner (make targets, task scripts) — use it
 
 If `.prism/CURRENT` names a change (or an explicit `<change>` is given), this verification is **design-aware**:
 
-- Read `.prism/conventions.md`, then set Phase → **verify** in the change's `README.md` now, on entry (see conventions, Statuses and transitions).
+- Read {{conventions}}, then set Phase → **verify** in the change's `README.md` now, on entry (see conventions, Statuses and transitions).
 - Read `.prism/<change>/proposal.md` → its **Constraints & Invariants** join Step 5's invariant checks verbatim.
 - Read every part's `spec.md` → each Requirement/Scenario becomes a first-class checklist item. Map scenarios via the `## Coverage` section (written by apply; format — conventions, spec.md); if it's absent (older change), fall back to matching test names to scenario names, then write the section. Report each as `passed` / `failed` / `affected but untested`. A scenario with **no covering test** is an advisory finding; an **unmet** scenario is blocking.
 - Skip ⏸ deferred nodes — list them in the report as `skipped (deferred)`.
-- Add a **`design conformance`** group to the Step 9 report, findings kept on **two separate
-  axes** so one can't mask the other:
+- Add a **`design conformance`** group to the Step 9 report. The author of the code is not an
+  independent reader of it: when your agent can start a subagent with a **fresh context**, give
+  it the diff range and the change's artifact paths — none of your own reasoning — and take its
+  findings per axis; otherwise review it yourself and label the group `self-review`. Findings
+  stay on **two separate axes** so one can't mask the other:
   - **spec axis** — does the built behaviour do what was asked: scenarios met, `proposal.md`
     invariants held, non-goals respected;
   - **design-shape axis** — does the implementation match the artifacts' shape:
@@ -89,7 +102,7 @@ From the diff (`<base>...HEAD` + uncommitted) identify touched areas and map the
 - **queue consumer / daemon / outbound integration** touched → **behavioural smoke**: submit a test input event and observe the expected effect (outgoing call, storage write, log, metric) (Step 6);
 - **UI** touched → **browser check** (Step 7);
 - multiple areas touched → all corresponding checks;
-- **code with parallelism/concurrency touched** (worker pools, shared state, queues, batching, locks, atomics, channel/goroutine graphs, shutdown) → Step 5 is mandatory, regardless of the rest.
+- **code with parallelism/concurrency touched** (worker pools, shared state, queues, batching, locks, atomics, channel/goroutine graphs, shutdown) → Step 5 is mandatory, regardless of the rest (at `--checks low`: 5.1 plus the race detector).
 
 Pure refactor/docs/library with no entry points → skip functional/browser (reason in report), but Step 5 and tests are still mandatory if concurrency is touched.
 
@@ -157,6 +170,7 @@ At the end — **fix recommendations**: for each remaining finding (and for risk
 # Verify — <change> (<date>)
 
 **Verdict:** FAIL | FAIL (design) | PASS_WITH_FINDINGS | PASS
+**Checks:** low | high
 
 | Group | Status | Notes |
 |-------|--------|-------|

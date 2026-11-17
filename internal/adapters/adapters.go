@@ -4,14 +4,42 @@ package adapters
 import (
 	"encoding/json"
 	"fmt"
+	"path"
 	"regexp"
 	"strings"
 
 	"github.com/mcoder33/prism/internal/workflows"
 )
 
-// Tool describes one supported AI agent: where its command files live,
-// how a command is invoked, and how a command file is formatted.
+// Delivery is how a workflow reaches the agent.
+type Delivery string
+
+const (
+	// Commands delivers one slash-command / prompt / workflow file per workflow.
+	Commands Delivery = "commands"
+	// Skills delivers one Agent Skills folder per workflow: SKILL.md plus a bundled
+	// references/conventions.md, so a committed skill needs nothing from .prism/.
+	Skills Delivery = "skills"
+)
+
+// ParseDelivery validates a --delivery flag value ("" means "tool default").
+func ParseDelivery(s string) (Delivery, error) {
+	switch d := Delivery(strings.ToLower(strings.TrimSpace(s))); d {
+	case "", Commands, Skills:
+		return d, nil
+	default:
+		return "", fmt.Errorf("unknown delivery %q; use %q or %q", s, Commands, Skills)
+	}
+}
+
+// File is one generated file: project-relative path and full content.
+type File struct {
+	Path    string
+	Content string
+}
+
+// Tool describes one supported AI agent: where its generated files live,
+// how a workflow is invoked, and how a file is formatted.
 type Tool struct {
 	// ID is the stable id used in --tools, e.g. "claude".
 	ID string
@@ -19,30 +47,201 @@ type Tool struct {
 	Name string
 	// DetectPaths are project-relative paths whose presence means the tool is used.
 	DetectPaths []string
-	// CommandFile returns the project-relative path of the generated file for a workflow.
+	// CommandFile returns the project-relative path of the generated command file for a
+	// workflow. nil when the tool has no command surface (skills-only, e.g. Codex).
 	CommandFile func(workflowID string) string
-	// CommandRef is how the user invokes a workflow in this tool, e.g. "/prism:drill".
+	// CommandRef is how the user invokes a command in this tool, e.g. "/prism:drill".
 	CommandRef func(workflowID string) string
 	// Format renders the full command file (frontmatter + body) for this tool.
 	Format func(w workflows.Workflow, body, version string) string
+
+	// SkillsDir is the project-relative directory the tool scans for Agent Skills
+	// ("" = the tool has no project skills support).
+	SkillsDir string
+	// SkillRef is how the user invokes a prism skill; nil means "/prism-<id>".
+	SkillRef func(workflowID string) string
+	// SkillArgsNative: the tool substitutes $ARGUMENTS in skill bodies itself.
+	SkillArgsNative bool
+	// SkillFrontmatter holds extra YAML frontmatter lines for SKILL.md.
+	SkillFrontmatter []string
+	// SkillExtras returns extra per-skill files, paths relative to the skill dir.
+	SkillExtras func(w workflows.Workflow, version string) []File
+	// LegacyFiles lists paths earlier prism versions generated for a workflow; they are
+	// removed (when still prism-stamped) on install, update and uninstall.
+	LegacyFiles func(workflowID string) []string
+}
+
+// Supports reports whether the tool can receive the given delivery.
+func (t Tool) Supports(d Delivery) bool {
+	switch d {
+	case Commands:
+		return t.CommandFile != nil
+	case Skills:
+		return t.SkillsDir != ""
+	}
+	return false
+}
+
+// DefaultDelivery is commands where the tool has them (backward compatible), else skills.
+func (t Tool) DefaultDelivery() Delivery {
+	if t.Supports(Commands) {
+		return Commands
+	}
+	return Skills
+}
+
+// Resolve returns the requested delivery when the tool supports it, else its default.
+func (t Tool) Resolve(requested Delivery) Delivery {
+	if requested != "" && t.Supports(requested) {
+		return requested
+	}
+	return t.DefaultDelivery()
+}
+
+// SkillName is the Agent Skills name (and folder name) of a workflow.
+func SkillName(workflowID string) string { return "prism-" + workflowID }
+
+// SkillDir is the project-relative skill folder of a workflow.
+func (t Tool) SkillDir(workflowID string) string {
+	return t.SkillsDir + "/" + SkillName(workflowID)
+}
+
+// SkillConventionsPath is the bundled conventions copy inside a workflow's skill folder.
+func (t Tool) SkillConventionsPath(workflowID string) string {
+	return t.SkillDir(workflowID) + "/references/conventions.md"
+}
+
+// Ref is how the user invokes a workflow under a delivery.
+func (t Tool) Ref(d Delivery, workflowID string) string {
+	if d == Skills || t.CommandRef == nil {
+		if t.SkillRef != nil {
+			return t.SkillRef(workflowID)
+		}
+		return "/" + SkillName(workflowID)
+	}
+	return t.CommandRef(workflowID)
+}
+
+// Location is a short human description of where a delivery's files land.
+func (t Tool) Location(d Delivery) string {
+	if d == Skills {
+		return t.SkillsDir + "/prism-*/"
+	}
+	return path.Dir(t.CommandFile(workflows.All[0].ID)) + "/"
+}
+
+// SharedConventionsPath is the git-excluded conventions copy read by command deliveries.
+const SharedConventionsPath = ".prism/conventions.md"
+
+// ConventionsFile renders the stamped conventions document.
+func ConventionsFile(version string) string {
+	return GeneratedStamp(version) + "\n\n" + workflows.Conventions() + "\n"
+}
+
+// Render produces every file of one workflow for this tool under a delivery.
+func (t Tool) Render(d Delivery, w workflows.Workflow, version string) []File {
+	body := ResolveRefs(workflows.Body(w.ID), t, d, w.ID)
+	if d != Skills {
+		return []File{{Path: t.CommandFile(w.ID), Content: t.Format(w, body, version)}}
+	}
+	if !t.SkillArgsNative {
+		body = strings.ReplaceAll(body, "`$ARGUMENTS`", "the text after the skill name")
+		body = strings.ReplaceAll(body, "$ARGUMENTS", "the text after the skill name")
+	}
+	dir := t.SkillDir(w.ID)
+	files := []File{
+		{Path: dir + "/SKILL.md", Content: t.skillMarkdown(w, body, version)},
+		{Path: t.SkillConventionsPath(w.ID), Content: ConventionsFile(version)},
+	}
+	if t.SkillExtras != nil {
+		for _, f := range t.SkillExtras(w, version) {
+			files = append(files, File{Path: dir + "/" + f.Path, Content: f.Content})
+		}
+	}
+	return files
+}
+
+// Paths lists every project-relative path prism may have generated for a workflow in this
+// tool — both deliveries plus legacy layouts. Used for detection, migration and uninstall.
+func (t Tool) Paths(w workflows.Workflow) []string {
+	var ps []string
+	for _, d := range []Delivery{Commands, Skills} {
+		if t.Supports(d) {
+			for _, f := range t.Render(d, w, "0.0.0") {
+				ps = append(ps, f.Path)
+			}
+		}
+	}
+	if t.LegacyFiles != nil {
+		ps = append(ps, t.LegacyFiles(w.ID)...)
+	}
+	return ps
+}
+
+// PrimaryFile is the file whose presence marks a workflow as installed under a delivery.
+func (t Tool) PrimaryFile(d Delivery, workflowID string) string {
+	if d == Skills {
+		return t.SkillDir(workflowID) + "/SKILL.md"
+	}
+	return t.CommandFile(workflowID)
+}
+
+// skillMarkdown renders SKILL.md per the Agent Skills format: name must equal the folder.
+func (t Tool) skillMarkdown(w workflows.Workflow, body, version string) string {
+	lines := []string{
+		"---",
+		"name: " + SkillName(w.ID),
+		"description: " + yamlQuote(w.Description),
+	}
+	lines = append(lines, t.SkillFrontmatter...)
+	lines = append(lines,
+		"---",
+		GeneratedStamp(version),
+		"",
+		"# "+w.Title,
+		"",
+		body,
+		"",
+	)
+	return strings.Join(lines, "\n")
 }
 
 var cmdRefPattern = regexp.MustCompile(`\{\{cmd:([a-z-]+)\}\}`)
 
-// ResolveCommandRefs replaces {{cmd:<id>}} placeholders with the tool-specific slash command.
+// ConventionsPlaceholder in a template body names the conventions file to read.
+const ConventionsPlaceholder = "{{conventions}}"
+
+// ResolveCommandRefs resolves a body for the tool's command delivery.
 func ResolveCommandRefs(body string, t Tool) string {
+	return ResolveRefs(body, t, Commands, "")
+}
+
+// ResolveRefs replaces {{cmd:<id>}} with the tool's invocation under the delivery, and
+// {{conventions}} with the conventions path that delivery ships: the shared
+// .prism/conventions.md for commands, the skill's own bundled copy for skills.
+func ResolveRefs(body string, t Tool, d Delivery, workflowID string) string {
+	conv := SharedConventionsPath
+	if d == Skills {
+		conv = t.SkillConventionsPath(workflowID)
+	}
+	body = strings.ReplaceAll(body, ConventionsPlaceholder, "`"+conv+"`")
 	return cmdRefPattern.ReplaceAllStringFunc(body, func(m string) string {
 		id := cmdRefPattern.FindStringSubmatch(m)[1]
-		return "`" + t.CommandRef(id) + "`"
+		return "`" + t.Ref(d, id) + "`"
 	})
 }
 
-// GeneratedStamp marks a file as tool-owned and records the producing version.
-func GeneratedStamp(version string) string {
+// GeneratedStampText is the stamp sentence; wrapped per file syntax (HTML/TOML/YAML comment).
+func GeneratedStampText(version string) string {
 	return fmt.Sprintf(
-		"<!-- prism:generated v%s — managed by the prism CLI, do not edit (run `prism update` to regenerate) -->",
+		"prism:generated v%s — managed by the prism CLI, do not edit (run `prism update` to regenerate)",
 		version,
 	)
+}
+
+// GeneratedStamp marks a Markdown file as tool-owned and records the producing version.
+func GeneratedStamp(version string) string {
+	return "<!-- " + GeneratedStampText(version) + " -->"
 }
 
 var generatedVersionPattern = regexp.MustCompile(`prism:generated v([0-9][^\s]*)`)
@@ -106,6 +305,10 @@ var Claude = Tool{
 			"tags: [workflow, design, prism]",
 		)
 	},
+	SkillsDir:       ".claude/skills",
+	SkillArgsNative: true,
+	// prism workflows have gates and side effects: the user starts them, never the model.
+	SkillFrontmatter: []string{"disable-model-invocation: true"},
 }
 
 var Cursor = Tool{
@@ -115,15 +318,33 @@ var Cursor = Tool{
 	CommandFile: func(id string) string { return ".cursor/commands/prism-" + id + ".md" },
 	CommandRef:  func(id string) string { return "/prism-" + id },
 	Format:      plainMarkdown,
+	SkillsDir:   ".cursor/skills",
 }
 
+// Codex is skills-only: custom prompts are deprecated upstream, and Codex only ever read
+// them from ~/.codex/prompts/ — never from a project's .codex/prompts/. Project skills live
+// in .agents/skills/.
 var Codex = Tool{
 	ID:          "codex",
 	Name:        "Codex CLI",
-	DetectPaths: []string{".codex"},
-	CommandFile: func(id string) string { return ".codex/prompts/prism-" + id + ".md" },
-	CommandRef:  func(id string) string { return "/prism-" + id },
-	Format:      plainMarkdown,
+	DetectPaths: []string{".codex", ".agents"},
+	SkillsDir:   ".agents/skills",
+	// Codex invokes skills with $; a bare /prism-<id> is not recognized.
+	SkillRef: func(id string) string { return "$" + SkillName(id) },
+	SkillExtras: func(w workflows.Workflow, version string) []File {
+		return []File{{
+			Path: "agents/openai.yaml",
+			Content: strings.Join([]string{
+				"# " + GeneratedStampText(version),
+				"interface:",
+				"  display_name: " + yamlQuote(w.Title),
+				"policy:",
+				"  allow_implicit_invocation: false",
+				"",
+			}, "\n"),
+		}}
+	},
+	LegacyFiles: func(id string) []string { return []string{".codex/prompts/prism-" + id + ".md"} },
 }
 
 var Gemini = Tool{
@@ -140,7 +361,7 @@ var Gemini = Tool{
 		safeBody = strings.ReplaceAll(safeBody, "$ARGUMENTS", "{{args}}")
 		desc, _ := json.Marshal(w.Description)
 		return strings.Join([]string{
-			fmt.Sprintf("# prism:generated v%s — managed by the prism CLI, do not edit (run `prism update` to regenerate)", version),
+			"# " + GeneratedStampText(version),
 			"description = " + string(desc),
 			"prompt = '''",
 			"# " + w.Title,
@@ -150,6 +371,7 @@ var Gemini = Tool{
 			"",
 		}, "\n")
 	},
+	SkillsDir: ".gemini/skills",
 }
 
 var Copilot = Tool{
@@ -161,6 +383,7 @@ var Copilot = Tool{
 	Format: func(w workflows.Workflow, body, version string) string {
 		return markdownWithFrontmatter(w, body, version)
 	},
+	SkillsDir: ".github/skills",
 }
 
 var Windsurf = Tool{
@@ -183,6 +406,7 @@ var OpenCode = Tool{
 	Format: func(w workflows.Workflow, body, version string) string {
 		return markdownWithFrontmatter(w, body, version)
 	},
+	SkillsDir: ".opencode/skills",
 }
 
 var RooCode = Tool{
@@ -194,6 +418,7 @@ var RooCode = Tool{
 	Format: func(w workflows.Workflow, body, version string) string {
 		return markdownWithFrontmatter(w, body, version)
 	},
+	SkillsDir: ".roo/skills",
 }
 
 var Cline = Tool{
@@ -204,6 +429,7 @@ var Cline = Tool{
 	// Cline invokes a workflow by its filename, extension included.
 	CommandRef: func(id string) string { return "/prism-" + id + ".md" },
 	Format:     plainMarkdown,
+	SkillsDir:  ".cline/skills",
 }
 
 var All = []Tool{Claude, Cursor, Codex, Gemini, Copilot, Windsurf, OpenCode, RooCode, Cline}

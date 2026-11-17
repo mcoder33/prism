@@ -1,7 +1,7 @@
 Archives a completed decomposition change. {{cmd:apply}} runs this automatically as its last
 step; invoke it manually to archive a change that was applied without auto-archive, or to tidy up.
 
-**Read first**: `.prism/conventions.md` (if missing, run `prism update`).
+**Read first**: {{conventions}} (if missing, run `prism update`).
 
 **Input**: optionally a `<change>` name. If omitted, infer from context; if ambiguous you MUST
 prompt for selection (never auto-guess).
@@ -44,7 +44,10 @@ that will **not** be finished — the missing exit for a dead-end idea, so it st
    - Move the whole folder: `mv .prism/<change> .prism/archive/<change>`.
    - If `.prism/CURRENT` points to this change, clear it (no active change after archiving).
 
-4. **Mini-retro (optional, keep tiny).** If during apply/verify the design had to change
+4. **Mini-retro (keep tiny).** If `README.md` has a `**Forecast:**` line, compare it with the
+   actual (`git diff --stat` over the part commits): one line — forecast vs actual LOC/files,
+   and whether the named risk fired. A part that blew past the atomicity bounds is a
+   **methodology** lesson below. Then, if during apply/verify the design had to change
    (deviations recorded under the design-as-built rule), classify each lesson first — one
    lesson per line, with its why — and route it by kind:
    - **project** (about this codebase: a convention, a trap, a constraint) → propose it as one
@@ -63,8 +66,12 @@ that will **not** be finished — the missing exit for a dead-end idea, so it st
 - Always prompt for selection if the change is not provided/inferable; never auto-guess.
 - Don't block on warnings — inform and confirm, then proceed.
 - `.prism/` artifacts are not committed by default; archiving is a filesystem move only
-  (no commit — unless the project opted into sharing archives, see conventions).
+  (no commit — unless the project opted into sharing archives, below).
 - Don't overwrite an existing archive entry.
+- **Sharing archives** (optional, per-project decision): `.git/info/exclude` is per-clone, so by
+  default archives die with the machine. To share them as team reference, remove `.prism` from
+  `.git/info/exclude` and add `.prism/*` + `!.prism/archive/` to `.gitignore`. Active changes
+  stay local either way.
 - **Hotfix to an archived change**: don't move it back. Start a new change ({{cmd:propose}})
   whose `proposal.md` links the archived folder under `## Why` — the archive stays an
   immutable as-built record.

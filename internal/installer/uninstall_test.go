@@ -11,7 +11,7 @@ import (
 
 func TestUninstallToolRemovesGeneratedAndCleansDirs(t *testing.T) {
 	root := t.TempDir()
-	if _, err := InstallTool(root, adapters.Claude); err != nil {
+	if _, err := InstallTool(root, adapters.Claude, ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,7 +31,7 @@ func TestUninstallToolRemovesGeneratedAndCleansDirs(t *testing.T) {
 
 func TestUninstallToolSkipsUnstampedFiles(t *testing.T) {
 	root := t.TempDir()
-	if _, err := InstallTool(root, adapters.Claude); err != nil {
+	if _, err := InstallTool(root, adapters.Claude, ""); err != nil {
 		t.Fatal(err)
 	}
 	// Replace one file with an unstamped, hand-written version.

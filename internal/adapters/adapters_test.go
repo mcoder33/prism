@@ -15,12 +15,18 @@ func TestEveryWorkflowHasTemplateBody(t *testing.T) {
 	}
 }
 
-func TestCommandRefsResolveForEveryAdapter(t *testing.T) {
+func TestRenderLeavesNoPlaceholders(t *testing.T) {
 	for _, a := range All {
-		for _, w := range workflows.All {
-			body := ResolveCommandRefs(workflows.Body(w.ID), a)
-			if strings.Contains(body, "{{cmd:") {
-				t.Errorf("%s/%s: leftover {{cmd:}} placeholder", a.ID, w.ID)
+		for _, d := range []Delivery{Commands, Skills} {
+			if !a.Supports(d) {
+				continue
+			}
+			for _, w := range workflows.All {
+				for _, f := range a.Render(d, w, "0.0.0") {
+					if strings.Contains(f.Content, "{{cmd:") || strings.Contains(f.Content, ConventionsPlaceholder) {
+						t.Errorf("%s/%s/%s %s: leftover placeholder", a.ID, d, w.ID, f.Path)
+					}
+				}
 			}
 		}
 	}
@@ -63,9 +69,120 @@ func TestGeminiUsesArgsPlaceholder(t *testing.T) {
 func TestGeneratedFilesCarryParseableVersionStamp(t *testing.T) {
 	w := workflows.All[0]
 	for _, a := range All {
-		out := a.Format(w, "body", "1.2.3")
-		if got := ParseGeneratedVersion(out); got != "1.2.3" {
-			t.Errorf("%s: ParseGeneratedVersion = %q, want 1.2.3", a.ID, got)
+		for _, d := range []Delivery{Commands, Skills} {
+			if !a.Supports(d) {
+				continue
+			}
+			for _, f := range a.Render(d, w, "1.2.3") {
+				if got := ParseGeneratedVersion(f.Content); got != "1.2.3" {
+					t.Errorf("%s %s: ParseGeneratedVersion = %q, want 1.2.3", a.ID, f.Path, got)
+				}
+			}
 		}
+	}
+}
+
+func TestSkillFollowsAgentSkillsFormat(t *testing.T) {
+	w := workflows.All[0]
+	for _, a := range All {
+		if !a.Supports(Skills) {
+			continue
+		}
+		files := a.Render(Skills, w, "1.2.3")
+		skill := files[0]
+		if want := a.SkillsDir + "/prism-" + w.ID + "/SKILL.md"; skill.Path != want {
+			t.Fatalf("%s: skill path = %s, want %s", a.ID, skill.Path, want)
+		}
+		// frontmatter must open the file; name must equal the folder name.
+		if !strings.HasPrefix(skill.Content, "---\nname: prism-"+w.ID+"\ndescription: ") {
+			t.Errorf("%s: SKILL.md frontmatter malformed:\n%.120s", a.ID, skill.Content)
+		}
+		conv := a.SkillConventionsPath(w.ID)
+		if !strings.Contains(skill.Content, "`"+conv+"`") {
+			t.Errorf("%s: SKILL.md does not point at its bundled conventions %s", a.ID, conv)
+		}
+		found := false
+		for _, f := range files {
+			if f.Path == conv && strings.Contains(f.Content, "## Gates") {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s: bundled conventions file missing", a.ID)
+		}
+	}
+}
+
+func TestCodexIsSkillsOnlyWithDollarRefs(t *testing.T) {
+	if Codex.Supports(Commands) || Codex.DefaultDelivery() != Skills {
+		t.Fatal("codex must be skills-only")
+	}
+	if got := Codex.Resolve(Commands); got != Skills {
+		t.Errorf("codex Resolve(commands) = %s, want skills", got)
+	}
+	if got := Codex.Ref(Skills, "drill"); got != "$prism-drill" {
+		t.Errorf("codex ref = %s", got)
+	}
+	if got := Codex.SkillDir("drill"); got != ".agents/skills/prism-drill" {
+		t.Errorf("codex skill dir = %s", got)
+	}
+	var verify workflows.Workflow
+	for _, w := range workflows.All {
+		if w.ID == "verify" {
+			verify = w
+		}
+	}
+	files := Codex.Render(Skills, verify, "0.0.0")
+	if strings.Contains(files[0].Content, "$ARGUMENTS") {
+		t.Error("codex skill still contains $ARGUMENTS, which Codex does not expand")
+	}
+	hasPolicy := false
+	for _, f := range files {
+		if strings.HasSuffix(f.Path, "agents/openai.yaml") && strings.Contains(f.Content, "allow_implicit_invocation: false") {
+			hasPolicy = true
+		}
+	}
+	if !hasPolicy {
+		t.Error("codex skill lacks agents/openai.yaml with implicit invocation disabled")
+	}
+	if got := Codex.LegacyFiles("drill"); len(got) != 1 || got[0] != ".codex/prompts/prism-drill.md" {
+		t.Errorf("codex legacy = %v", got)
+	}
+}
+
+func TestClaudeSkillKeepsArgumentsAndIsUserInvoked(t *testing.T) {
+	var verify workflows.Workflow
+	for _, w := range workflows.All {
+		if w.ID == "verify" {
+			verify = w
+		}
+	}
+	skill := Claude.Render(Skills, verify, "0.0.0")[0].Content
+	if !strings.Contains(skill, "$ARGUMENTS") {
+		t.Error("claude skill should keep $ARGUMENTS (expanded natively)")
+	}
+	if !strings.Contains(skill, "disable-model-invocation: true") {
+		t.Error("claude skill should be user-invoked only")
+	}
+	if !strings.Contains(skill, "`/prism-") {
+		t.Error("claude skill refs should use /prism-<id>")
+	}
+}
+
+func TestCommandsUseSharedConventions(t *testing.T) {
+	out := Claude.Render(Commands, workflows.All[0], "0.0.0")[0].Content
+	if !strings.Contains(out, "`"+SharedConventionsPath+"`") {
+		t.Errorf("command body should point at %s", SharedConventionsPath)
+	}
+}
+
+func TestParseDelivery(t *testing.T) {
+	for in, want := range map[string]Delivery{"": "", "skills": Skills, "Commands": Commands} {
+		if got, err := ParseDelivery(in); err != nil || got != want {
+			t.Errorf("ParseDelivery(%q) = %q, %v", in, got, err)
+		}
+	}
+	if _, err := ParseDelivery("both"); err == nil {
+		t.Error("ParseDelivery should reject unknown values")
 	}
 }

@@ -1,7 +1,8 @@
-// Package cli wires the prism commands: init, update, list, doctor, uninstall.
+// Package cli wires the prism commands: init, update, list, status, check, doctor, uninstall.
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -18,16 +19,20 @@ func Execute() {
 		Use:   "prism",
 		Short: "PRISM — recursive decomposition workflow for AI coding agents",
 		Long: "PRISM — recursive decomposition workflow for AI coding agents.\n" +
-			"Installs /prism slash commands into a project for the agents you use.",
+			"Installs the prism workflow (skills or slash commands) into a project for the agents\n" +
+			"you use, and reads/validates the change artifacts it produces.",
 		Version:       workflows.Version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
 
-	root.AddCommand(newInitCmd(), newUpdateCmd(), newListCmd(), newDoctorCmd(), newUninstallCmd())
+	root.AddCommand(newInitCmd(), newUpdateCmd(), newListCmd(), newStatusCmd(), newCheckCmd(),
+		newDoctorCmd(), newUninstallCmd())
 
 	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, red("error: "+err.Error()))
+		if !errors.Is(err, errSilent) {
+			fmt.Fprintln(os.Stderr, red("error: "+err.Error()))
+		}
 		os.Exit(1)
 	}
 }

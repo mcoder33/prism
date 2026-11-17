@@ -45,7 +45,7 @@ func TestProjectRootArg(t *testing.T) {
 
 func TestRunInitWithToolsFlag(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(root, installer.ConventionsPath)); err != nil {
@@ -60,7 +60,7 @@ func TestRunInitWithToolsFlag(t *testing.T) {
 
 func TestRunInitToolsNoneIsNoop(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "none"); err != nil {
+	if err := runInit(root, "none", ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(root, installer.PrismDir)); !os.IsNotExist(err) {
@@ -77,7 +77,7 @@ func TestRunInitNonTTYDetectsTools(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, ".cursor"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := runInit(root, ""); err != nil {
+	if err := runInit(root, "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(root, adapters.Cursor.CommandFile("propose"))); err != nil {
@@ -89,20 +89,20 @@ func TestRunInitNonTTYNoToolsErrors(t *testing.T) {
 	if isTTY() {
 		t.Skip("requires a non-TTY environment")
 	}
-	if err := runInit(t.TempDir(), ""); err == nil {
+	if err := runInit(t.TempDir(), "", ""); err == nil {
 		t.Fatal("expected error when nothing is detected and not interactive")
 	}
 }
 
 func TestRunUpdateNothingInstalled(t *testing.T) {
-	if err := runUpdate(t.TempDir(), false); err != nil {
+	if err := runUpdate(t.TempDir(), false, ""); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestRunUpdateRegeneratesStaleTool(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -120,7 +120,7 @@ func TestRunUpdateRegeneratesStaleTool(t *testing.T) {
 		t.Fatalf("setup failed: InstalledVersion = %q", v)
 	}
 
-	if err := runUpdate(root, false); err != nil {
+	if err := runUpdate(root, false, ""); err != nil {
 		t.Fatal(err)
 	}
 	if v := installer.InstalledVersion(root, adapters.Claude); v != workflows.Version {
@@ -130,13 +130,13 @@ func TestRunUpdateRegeneratesStaleTool(t *testing.T) {
 
 func TestRunUpdateUpToDateWithoutForce(t *testing.T) {
 	root := t.TempDir()
-	if err := runInit(root, "claude"); err != nil {
+	if err := runInit(root, "claude", ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := runUpdate(root, false); err != nil {
+	if err := runUpdate(root, false, ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := runUpdate(root, true); err != nil {
+	if err := runUpdate(root, true, ""); err != nil {
 		t.Fatal(err)
 	}
 }

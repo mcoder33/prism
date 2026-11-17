@@ -4,7 +4,6 @@ package cli
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -64,6 +63,7 @@ type stepDoneMsg struct {
 
 type initModel struct {
 	projectRoot string
+	delivery    adapters.Delivery // "" = each tool's default; toggled with d
 	detected    map[string]bool
 	configured  map[string]bool
 
@@ -81,7 +81,7 @@ type initModel struct {
 	toolDone   []int
 }
 
-func newInitModel(projectRoot string) initModel {
+func newInitModel(projectRoot string, delivery adapters.Delivery) initModel {
 	detected := map[string]bool{}
 	for _, t := range installer.DetectTools(projectRoot) {
 		detected[t.ID] = true
@@ -98,6 +98,7 @@ func newInitModel(projectRoot string) initModel {
 		spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("205"))))
 	return initModel{
 		projectRoot: projectRoot,
+		delivery:    delivery,
 		detected:    detected,
 		configured:  configured,
 		selected:    selected,
@@ -118,14 +119,14 @@ func (m initModel) pickedTools() []adapters.Tool {
 }
 
 func (m initModel) runStep(i int) tea.Cmd {
-	root, queue, steps := m.projectRoot, m.queue, m.steps
+	root, queue, steps, delivery := m.projectRoot, m.queue, m.steps, m.delivery
 	return tea.Tick(stepDelay, func(time.Time) tea.Msg {
 		st := steps[i]
 		var err error
 		if st.toolIdx < 0 {
 			_, err = installer.InstallShared(root)
 		} else {
-			_, err = installer.InstallCommand(root, queue[st.toolIdx], workflows.All[st.wfIdx])
+			_, err = installer.InstallWorkflow(root, queue[st.toolIdx], delivery, workflows.All[st.wfIdx])
 		}
 		return stepDoneMsg{step: st, err: err}
 	})
@@ -150,6 +151,8 @@ func (m initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case " ":
 				m.selected[m.cursor] = !m.selected[m.cursor]
+			case "d":
+				m.delivery = nextDelivery(m.delivery)
 			case "a":
 				all := true
 				for i := range adapters.All {
@@ -270,7 +273,8 @@ func (m initModel) View() string {
 			}
 			fmt.Fprintf(&b, "  %s%s %s %s\n", cursor, box, name, note)
 		}
-		b.WriteString("\n  " + stSubtle.Render("space toggle · a all · enter install · q quit") + "\n")
+		b.WriteString("\n  " + stSubtle.Render("delivery: ") + stAccent.Render(deliveryLabel(m.delivery)) + "\n")
+		b.WriteString("  " + stSubtle.Render("space toggle · a all · d delivery · enter install · q quit") + "\n")
 
 	case phaseInstall, phaseDone:
 		b.WriteString(sectionTitle("Installing", 42) + "\n")
@@ -290,9 +294,9 @@ func (m initModel) View() string {
 			done := m.toolDone[ti]
 			switch {
 			case done == total:
-				dir := filepath.Dir(t.CommandFile(workflows.All[0].ID)) + "/"
+				d := t.Resolve(m.delivery)
 				fmt.Fprintf(&b, "  %s %s %s\n",
-					stOK.Render("✔"), name, stSubtle.Render(fmt.Sprintf("%d commands → %s", total, dir)))
+					stOK.Render("✔"), name, stSubtle.Render(fmt.Sprintf("%d %s → %s", total, d, t.Location(d))))
 			case ti == curTool:
 				fmt.Fprintf(&b, "  %s%s %s %s\n",
 					m.spinner.View(), name, progressBar(done, total),
@@ -306,15 +310,38 @@ func (m initModel) View() string {
 		if m.phase == phaseDone {
 			first := m.queue[0]
 			b.WriteString("\n  " + stOK.Render("✔ Done!") + " Try " +
-				stAccent.Render(first.CommandRef("propose")) + " in " + first.Name + " to start a change.\n")
-			b.WriteString("  " + stSubtle.Render("Restart your IDE/agent if slash commands do not show up.") + "\n")
+				stAccent.Render(first.Ref(first.Resolve(m.delivery), "propose")) + " in " + first.Name + " to start a change.\n")
+			b.WriteString("  " + stSubtle.Render("Restart your IDE/agent if the new commands/skills do not show up.") + "\n")
 		}
 	}
 	return b.String()
 }
 
-func runInitTUI(projectRoot string) error {
-	res, err := tea.NewProgram(newInitModel(projectRoot)).Run()
+// nextDelivery cycles the TUI delivery choice: tool default → skills → commands → default.
+func nextDelivery(d adapters.Delivery) adapters.Delivery {
+	switch d {
+	case "":
+		return adapters.Skills
+	case adapters.Skills:
+		return adapters.Commands
+	default:
+		return ""
+	}
+}
+
+func deliveryLabel(d adapters.Delivery) string {
+	switch d {
+	case adapters.Skills:
+		return "skills — Agent Skills folders, conventions bundled (Codex is always skills)"
+	case adapters.Commands:
+		return "commands — slash-command files (skills-only tools still get skills)"
+	default:
+		return "tool default — commands where supported, skills for Codex"
+	}
+}
+
+func runInitTUI(projectRoot string, delivery adapters.Delivery) error {
+	res, err := tea.NewProgram(newInitModel(projectRoot, delivery)).Run()
 	if err != nil {
 		return err
 	}

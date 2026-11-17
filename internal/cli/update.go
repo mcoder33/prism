@@ -12,6 +12,7 @@ import (
 
 func newUpdateCmd() *cobra.Command {
 	var force bool
+	var deliveryFlag string
 	cmd := &cobra.Command{
 		Use:   "update [path]",
 		Short: "refresh previously installed prism command files",
@@ -21,27 +22,40 @@ func newUpdateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return runUpdate(root, force)
+			delivery, err := adapters.ParseDelivery(deliveryFlag)
+			if err != nil {
+				return err
+			}
+			return runUpdate(root, force, delivery)
 		},
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "regenerate even if versions match")
+	cmd.Flags().StringVar(&deliveryFlag, "delivery", "",
+		"switch installed tools to \"skills\" or \"commands\" (old files are removed); omit to keep each tool's current delivery")
 	return cmd
 }
 
-func runUpdate(projectRoot string, force bool) error {
+func runUpdate(projectRoot string, force bool, delivery adapters.Delivery) error {
 	configured := installer.ConfiguredTools(projectRoot)
 	if len(configured) == 0 {
-		fmt.Println(yellow("No prism commands found in this project. Run `prism init` first."))
+		fmt.Println(yellow("No prism commands or skills found in this project. Run `prism init` first."))
 		return nil
 	}
 
-	stale := configured
-	if !force {
-		stale = nil
-		for _, t := range configured {
-			if installer.InstalledVersion(projectRoot, t) != workflows.Version {
-				stale = append(stale, t)
-			}
+	// target delivery per tool: an explicit --delivery wins, else keep what is installed.
+	target := func(t adapters.Tool) adapters.Delivery {
+		if delivery != "" {
+			return t.Resolve(delivery)
+		}
+		return installer.InstalledDelivery(projectRoot, t)
+	}
+
+	var stale []adapters.Tool
+	for _, t := range configured {
+		d := target(t)
+		if force || installer.InstalledVersion(projectRoot, t) != workflows.Version ||
+			installer.InstalledDelivery(projectRoot, t) != d || installer.NeedsMigration(projectRoot, t, d) {
+			stale = append(stale, t)
 		}
 	}
 
@@ -56,11 +70,19 @@ func runUpdate(projectRoot string, force bool) error {
 			from := installer.InstalledVersion(projectRoot, t)
 			if from == "" {
 				from = "unknown"
+			} else {
+				from = "v" + from
 			}
-			if _, err := installer.InstallTool(projectRoot, t); err != nil {
+			fromD := installer.InstalledDelivery(projectRoot, t)
+			d := target(t)
+			if _, err := installer.InstallTool(projectRoot, t, d); err != nil {
 				return err
 			}
-			fmt.Printf("  %s %s: %s → v%s\n", green("✔"), t.Name, from, workflows.Version)
+			change := ""
+			if fromD != d {
+				change = fmt.Sprintf(", %s → %s", fromD, d)
+			}
+			fmt.Printf("  %s %s: %s → v%s (%s%s)\n", green("✔"), t.Name, from, workflows.Version, t.Location(d), change)
 		}
 	}
 

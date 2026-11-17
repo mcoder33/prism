@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -33,22 +32,27 @@ func newDoctorCmd() *cobra.Command {
 func runDoctor(projectRoot string) error {
 	fmt.Println(bold(fmt.Sprintf("prism doctor — CLI v%s", workflows.Version)))
 
-	// Installed command files, per tool: version drift against the CLI.
+	// Installed files, per tool: version drift against the CLI, delivery, leftover layouts.
 	configured := installer.ConfiguredTools(projectRoot)
 	if len(configured) == 0 {
-		fmt.Println(yellow("  ⚠ no prism commands installed here — run `prism init`"))
+		fmt.Println(yellow("  ⚠ no prism commands or skills installed here — run `prism init`"))
 	} else {
 		for _, t := range configured {
 			v := installer.InstalledVersion(projectRoot, t)
-			if v == workflows.Version {
-				fmt.Printf("  %s %s: v%s\n", green("✔"), t.Name, v)
-				continue
+			d := installer.InstalledDelivery(projectRoot, t)
+			switch {
+			case v == workflows.Version && !installer.NeedsMigration(projectRoot, t, d):
+				fmt.Printf("  %s %s: v%s (%s → %s)\n", green("✔"), t.Name, v, d, t.Location(d))
+			case v == workflows.Version:
+				fmt.Printf("  %s %s: v%s (%s), plus leftover files from another layout — run `prism update`\n",
+					yellow("⚠"), t.Name, v, d)
+			case v == "":
+				fmt.Printf("  %s %s: only an old prism layout found — run `prism update` to migrate\n",
+					yellow("⚠"), t.Name)
+			default:
+				fmt.Printf("  %s %s: v%s (CLI is v%s) — run `prism update`\n",
+					yellow("⚠"), t.Name, v, workflows.Version)
 			}
-			if v == "" {
-				v = "unknown"
-			}
-			fmt.Printf("  %s %s: v%s (CLI is v%s) — run `prism update`\n",
-				yellow("⚠"), t.Name, v, workflows.Version)
 		}
 	}
 
@@ -89,12 +93,9 @@ func runDoctor(projectRoot string) error {
 		}
 	}
 
-	// xmllint: drawio validation dependency used by propose/drill/integrate.
-	if _, err := exec.LookPath("xmllint"); err == nil {
-		fmt.Printf("  %s xmllint present (drawio validation)\n", green("✔"))
-	} else {
-		fmt.Printf("  %s xmllint not found — drawio validation falls back to a manual parse check\n", dim("•"))
-	}
+	// drawio validation is built in (`prism check`); xmllint is only the fallback for agents
+	// running without the CLI on PATH.
+	fmt.Printf("  %s drawio validation: built in — `prism check`\n", green("✔"))
 
 	return nil
 }

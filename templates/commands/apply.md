@@ -1,6 +1,6 @@
 Implements the change in code based on the designed artifacts.
 
-**Read first**: `.prism/conventions.md` (if missing, run `prism update`).
+**Read first**: {{conventions}} (if missing, run `prism update`).
 
 ## Preconditions (check, don't assume)
 
@@ -10,7 +10,9 @@ Implements the change in code based on the designed artifacts.
 - Every node in `README.md` is 🟢 or 🔵 (⏸ deferred nodes are skipped — see conventions,
   Open tags) — else {{cmd:drill}} the gaps. Stop.
 - No `[blocking]` Open left in any `node.md` (`[deferred: …]` and `[minor]` pass) — else
-  resolve them with the user now.
+  resolve them with the user now (see conventions, Open tags — a route to a decision is not one).
+- With the CLI on PATH: `prism check --change <change>` reports no errors — else fix the
+  artifacts first.
 
 ## Procedure
 
@@ -25,6 +27,10 @@ Implements the change in code based on the designed artifacts.
    record it in `README.md` under the Tier line as `**Branch:** <name>`. If the branch is old
    and the default branch has moved — merge/rebase it in first, resolving conflicts per the
    design artifacts, not ad hoc. Then update `README.md` Phase → **apply**.
+   **Forecast** (first entry only — never rewrite it): add under the Branch line
+   `**Forecast:** ~<LOC> changed LOC · ~<N> files · risk: <the one thing most likely to force a
+   design change>`, estimated from the artifacts. Archive compares it with the actual — it
+   calibrates the atomicity bounds on real data instead of feel.
 4. Implement **in dependency order**, part by part:
    - write code per `signatures.md`/`detail.md`, using `spec.md` as acceptance criteria;
    - write tests per scenarios from `spec.md` — name each test after its scenario, and record
@@ -48,6 +54,22 @@ Implements the change in code based on the designed artifacts.
 9. **Archive the change automatically**: once every task passes, the project checks are green and
    verification is PASS, run {{cmd:archive}} `<change>` to move `.prism/<change>/` →
    `.prism/archive/<change>/`. This keeps `.prism/` showing only active changes.
+
+## Parallel mode (`--parallel`, opt-in)
+
+For `Tier: standard` when your agent can run subagents in **separate git worktrees**; otherwise
+run sequentially and say so. The **frontier** = every 🟢 part whose dependencies (root
+`tasks.md` order) are all 🔵.
+
+- Give each frontier part to an implementer subagent started with a **fresh context** (not a
+  fork of this conversation), in its own worktree branched from the feature branch. Pass
+  pointers, not copies: the part's artifact paths, the conventions path, the project check
+  command. It does step 4 plus step 5's checks and commit (`feat: NN <part>`) for that part only,
+  in its worktree; it never edits `README.md` — you are its single writer.
+- Merge finished parts into the feature branch **one at a time**, re-run project checks, then
+  flip 🟢 → 🔵 — the table marks only what the feature branch contains. A merge conflict
+  between parts is a boundary defect: stop and route it to {{cmd:integrate}}.
+- Recompute the frontier after each merge. Steps 7–9 run once every part has landed.
 
 ## Integration with code review
 

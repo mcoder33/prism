@@ -67,8 +67,11 @@ func TestDetectPathsDeclaredForEveryTool(t *testing.T) {
 		if len(tl.DetectPaths) == 0 {
 			t.Errorf("%s: no DetectPaths", tl.ID)
 		}
-		if tl.CommandFile("x") == "" || tl.CommandRef("x") == "" {
-			t.Errorf("%s: empty CommandFile/CommandRef", tl.ID)
+		if !tl.Supports(Commands) && !tl.Supports(Skills) {
+			t.Errorf("%s: supports neither commands nor skills", tl.ID)
+		}
+		if tl.Supports(Commands) && (tl.CommandFile("x") == "" || tl.CommandRef == nil || tl.Format == nil) {
+			t.Errorf("%s: incomplete command adapter", tl.ID)
 		}
 	}
 }

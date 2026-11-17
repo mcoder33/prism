@@ -72,6 +72,22 @@ find-symbol tools if available, otherwise grep", "your interactive question tool
 `AskUserQuestion` in Claude Code)". A hard dependency on one agent's feature breaks the other
 eight.
 
+Templates also install in two **deliveries** (slash commands, Agent Skills), so never hardcode
+what differs between them — write the placeholder and let the installer resolve it:
+
+- `{{cmd:<id>}}` — how to invoke another workflow (`/prism:drill`, `/prism-drill`, `$prism-drill`).
+- `{{conventions}}` — the conventions file (`.prism/conventions.md` for commands; the skill's
+  bundled `references/conventions.md` for skills).
+
+`lint_test.go` rejects a hardcoded conventions path and any other `{{…}}` placeholder.
+
+## Mechanical checks belong in the CLI
+
+When a rule can be checked by reading files — a glyph mismatch, a missing artifact, malformed
+XML, an untagged Open — add it to `internal/change` (`prism status` / `prism check`) and have
+the template call the CLI, rather than adding prose that asks the agent to eyeball it. Keep a
+by-hand fallback line for agents running without the CLI on PATH.
+
 ## Checklist before a PR
 
 1. `make ci` green — the methodology lint (`internal/workflows/lint_test.go`) checks section

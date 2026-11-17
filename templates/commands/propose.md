@@ -1,6 +1,6 @@
 Starts a new "change" in the recursive decomposition methodology.
 
-**Read first**: `.prism/conventions.md` (formats, layout, rules; if missing, run `prism update`).
+**Read first**: {{conventions}} (formats, layout, rules; if missing, run `prism update`).
 
 ## Amendment mode (existing change)
 
@@ -56,7 +56,8 @@ question at a time, each one reshaping the step-2 draft. Principles (in the spir
 
 - Walk the decision tree, resolving dependencies between decisions **one at a time**.
 - **Ask questions one at a time.** For each question give **your recommended answer** — grounded
-  in the step-1 best practices and the code, where relevant.
+  in the step-1 best practices and the code, where relevant — and word it so "yes" accepts that
+  recommendation.
 - If the user asks to speed up, switch to **frontier rounds**: each round asks every question
   whose prerequisite decisions are already made (with a recommended answer each), then
   recompute what the answers unlocked. One-at-a-time stays the default pace.

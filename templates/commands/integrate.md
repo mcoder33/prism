@@ -1,6 +1,6 @@
 Assembles the parts into the overall picture. Run when the main parts are drilled (🟢).
 
-**Read first**: `.prism/conventions.md` (if missing, run `prism update`).
+**Read first**: {{conventions}} (if missing, run `prism update`).
 
 ## Preconditions (check, don't assume)
 

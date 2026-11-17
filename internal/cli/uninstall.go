@@ -14,7 +14,7 @@ func newUninstallCmd() *cobra.Command {
 	var shared bool
 	cmd := &cobra.Command{
 		Use:   "uninstall [path]",
-		Short: "remove prism command files (design artifacts under .prism/ are kept)",
+		Short: "remove prism command and skill files (design artifacts under .prism/ are kept)",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			root, err := projectRootArg(args)
@@ -43,7 +43,7 @@ func runUninstall(projectRoot, toolsFlag string, shared bool) error {
 		tools = installer.ConfiguredTools(projectRoot)
 	}
 	if len(tools) == 0 {
-		fmt.Println(yellow("No prism commands found to remove."))
+		fmt.Println(yellow("No prism commands or skills found to remove."))
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func runUninstall(projectRoot, toolsFlag string, shared bool) error {
 			return err
 		}
 		if len(removed) > 0 {
-			fmt.Printf("  %s %s: removed %d command file(s)\n", green("✔"), t.Name, len(removed))
+			fmt.Printf("  %s %s: removed %d generated file(s)\n", green("✔"), t.Name, len(removed))
 			total += len(removed)
 		}
 	}

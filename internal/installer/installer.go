@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/mcoder33/prism/internal/adapters"
@@ -32,29 +33,75 @@ func DetectTools(projectRoot string) []adapters.Tool {
 	return found
 }
 
-// ConfiguredTools returns tools that already have prism command files installed.
+// ConfiguredTools returns tools that already have prism-generated files installed
+// (either delivery, or a legacy layout awaiting migration).
 func ConfiguredTools(projectRoot string) []adapters.Tool {
 	var found []adapters.Tool
 	for _, t := range adapters.All {
-		for _, w := range workflows.All {
-			if _, err := os.Stat(filepath.Join(projectRoot, t.CommandFile(w.ID))); err == nil {
-				found = append(found, t)
-				break
+		if len(generatedPaths(projectRoot, t)) > 0 {
+			found = append(found, t)
+		}
+	}
+	return found
+}
+
+// generatedPaths lists the prism-stamped files present for a tool, across every layout.
+func generatedPaths(projectRoot string, t adapters.Tool) []string {
+	var found []string
+	for _, w := range workflows.All {
+		for _, rel := range t.Paths(w) {
+			if isGenerated(filepath.Join(projectRoot, rel)) {
+				found = append(found, rel)
 			}
 		}
 	}
 	return found
 }
 
-// InstalledVersion reads the prism version stamp from a tool's generated files ("" if none).
+// InstalledDelivery reports which delivery a tool is installed with. A tool with nothing
+// installed (or only legacy files) reports its default delivery.
+func InstalledDelivery(projectRoot string, t adapters.Tool) adapters.Delivery {
+	for _, d := range []adapters.Delivery{adapters.Skills, adapters.Commands} {
+		if !t.Supports(d) {
+			continue
+		}
+		for _, w := range workflows.All {
+			if isGenerated(filepath.Join(projectRoot, t.PrimaryFile(d, w.ID))) {
+				return d
+			}
+		}
+	}
+	return t.DefaultDelivery()
+}
+
+// InstalledVersion reads the prism version stamp from the tool's installed primary files
+// ("" if none). Legacy-only installs report "" so update treats them as stale.
 func InstalledVersion(projectRoot string, t adapters.Tool) string {
+	d := InstalledDelivery(projectRoot, t)
 	for _, w := range workflows.All {
-		b, err := os.ReadFile(filepath.Join(projectRoot, t.CommandFile(w.ID)))
+		b, err := os.ReadFile(filepath.Join(projectRoot, t.PrimaryFile(d, w.ID)))
 		if err == nil {
 			return adapters.ParseGeneratedVersion(string(b))
 		}
 	}
 	return ""
+}
+
+// NeedsMigration reports prism-generated files outside the tool's current delivery
+// (the other delivery or a legacy layout) — update removes them.
+func NeedsMigration(projectRoot string, t adapters.Tool, d adapters.Delivery) bool {
+	keep := map[string]bool{}
+	for _, w := range workflows.All {
+		for _, f := range t.Render(d, w, workflows.Version) {
+			keep[f.Path] = true
+		}
+	}
+	for _, rel := range generatedPaths(projectRoot, t) {
+		if !keep[rel] {
+			return true
+		}
+	}
+	return false
 }
 
 func writeFileEnsured(path, content string) error {
@@ -64,9 +111,11 @@ func writeFileEnsured(path, content string) error {
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
-// InstallShared writes .prism/conventions.md (shared by all tools) and excludes .prism/ from git.
+// InstallShared writes .prism/conventions.md (read by command deliveries) and excludes
+// .prism/ from git. Skill deliveries bundle their own copy, but active changes and
+// `prism status`/`check` still live under .prism/.
 func InstallShared(projectRoot string) ([]string, error) {
-	content := adapters.GeneratedStamp(workflows.Version) + "\n\n" + workflows.Conventions() + "\n"
+	content := adapters.ConventionsFile(workflows.Version)
 	if err := writeFileEnsured(filepath.Join(projectRoot, ConventionsPath), content); err != nil {
 		return nil, fmt.Errorf("write conventions: %w", err)
 	}
@@ -76,27 +125,43 @@ func InstallShared(projectRoot string) ([]string, error) {
 	return []string{ConventionsPath}, nil
 }
 
-// InstallCommand writes one command file for a tool, returning its project-relative path.
-// Files are tool-owned: always overwritten.
-func InstallCommand(projectRoot string, t adapters.Tool, w workflows.Workflow) (string, error) {
-	body := adapters.ResolveCommandRefs(workflows.Body(w.ID), t)
-	rendered := t.Format(w, body, workflows.Version)
-	rel := t.CommandFile(w.ID)
-	if err := writeFileEnsured(filepath.Join(projectRoot, rel), rendered); err != nil {
-		return "", fmt.Errorf("write %s: %w", rel, err)
+// InstallWorkflow writes one workflow for a tool under a delivery, then removes the
+// prism-generated files of that workflow in any other layout (the other delivery, legacy
+// paths) — switching delivery or upgrading from an old layout is just a reinstall.
+// Files are tool-owned: always overwritten. Returns the written project-relative paths.
+func InstallWorkflow(projectRoot string, t adapters.Tool, d adapters.Delivery, w workflows.Workflow) ([]string, error) {
+	d = t.Resolve(d)
+	files := t.Render(d, w, workflows.Version)
+	written := map[string]bool{}
+	var out []string
+	for _, f := range files {
+		if err := writeFileEnsured(filepath.Join(projectRoot, f.Path), f.Content); err != nil {
+			return nil, fmt.Errorf("write %s: %w", f.Path, err)
+		}
+		written[f.Path] = true
+		out = append(out, f.Path)
 	}
-	return rel, nil
+	var stale []string
+	for _, rel := range t.Paths(w) {
+		if !written[rel] {
+			stale = append(stale, rel)
+		}
+	}
+	if _, err := removeGenerated(projectRoot, stale); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
-// InstallTool writes all command files for one tool.
-func InstallTool(projectRoot string, t adapters.Tool) ([]string, error) {
-	files := make([]string, 0, len(workflows.All))
+// InstallTool writes every workflow for one tool under a delivery ("" = tool default).
+func InstallTool(projectRoot string, t adapters.Tool, d adapters.Delivery) ([]string, error) {
+	var files []string
 	for _, w := range workflows.All {
-		rel, err := InstallCommand(projectRoot, t, w)
+		written, err := InstallWorkflow(projectRoot, t, d, w)
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, rel)
+		files = append(files, written...)
 	}
 	return files, nil
 }
@@ -145,15 +210,24 @@ func isGenerated(path string) bool {
 	return adapters.ParseGeneratedVersion(string(b)) != ""
 }
 
-// UninstallTool removes all prism-generated command files for one tool. Only files
-// carrying the prism:generated stamp are removed — a same-named file the user
-// hand-wrote is left untouched. Now-empty prism command directories are cleaned up.
+// UninstallTool removes every prism-generated file of one tool — both deliveries and
+// legacy layouts. Only files carrying the prism:generated stamp are removed; a same-named
+// file the user hand-wrote is left untouched. Emptied prism directories are cleaned up.
 // Returns the removed project-relative paths.
 func UninstallTool(projectRoot string, t adapters.Tool) ([]string, error) {
+	var all []string
+	for _, w := range workflows.All {
+		all = append(all, t.Paths(w)...)
+	}
+	return removeGenerated(projectRoot, all)
+}
+
+// removeGenerated deletes the stamped files among rels and prunes directories they leave
+// empty, walking up to (never including) the top-level tool directory such as .claude/.
+func removeGenerated(projectRoot string, rels []string) ([]string, error) {
 	var removed []string
 	dirs := map[string]bool{}
-	for _, w := range workflows.All {
-		rel := t.CommandFile(w.ID)
+	for _, rel := range rels {
 		abs := filepath.Join(projectRoot, rel)
 		if !isGenerated(abs) {
 			continue
@@ -162,12 +236,18 @@ func UninstallTool(projectRoot string, t adapters.Tool) ([]string, error) {
 			return removed, fmt.Errorf("remove %s: %w", rel, err)
 		}
 		removed = append(removed, rel)
-		dirs[filepath.Dir(abs)] = true
+		for d := filepath.Dir(filepath.FromSlash(rel)); strings.Contains(d, string(filepath.Separator)); d = filepath.Dir(d) {
+			dirs[d] = true
+		}
 	}
-	// Drop now-empty command dirs (e.g. .claude/commands/prism/). os.Remove refuses
-	// non-empty dirs, so a directory shared with other files is left intact.
+	// Deepest first; os.Remove refuses non-empty dirs, so shared dirs survive.
+	ordered := make([]string, 0, len(dirs))
 	for d := range dirs {
-		_ = os.Remove(d)
+		ordered = append(ordered, d)
+	}
+	sort.Slice(ordered, func(i, j int) bool { return len(ordered[i]) > len(ordered[j]) })
+	for _, d := range ordered {
+		_ = os.Remove(filepath.Join(projectRoot, d))
 	}
 	return removed, nil
 }

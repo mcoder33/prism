@@ -1,7 +1,7 @@
 Read-only: reports where the active change stands and the single next action. Changes nothing —
 the re-entry point after a session break.
 
-**Read first**: `.prism/conventions.md` (if missing, run `prism update`).
+**Read first**: {{conventions}} (if missing, run `prism update`).
 
 ## Procedure
 
@@ -9,7 +9,9 @@ the re-entry point after a session break.
    (sub-dirs of `.prism/` excluding `archive/`) and pick via an interactive question. If `.prism/`
    has no active changes at all, say so and suggest {{cmd:propose}}. Never guess.
 2. **Read `README.md` of the change, then cross-check it against reality** — don't silently
-   trust the table:
+   trust the table. With the CLI on PATH, start from `prism status --change <change> --json`:
+   it returns the parsed table, task/Open counts and the deterministic discrepancies
+   (`findings`) — then add only the git-commit check below. Without it, check by hand:
    - `NN-name/` directories present vs the table rows;
    - expected artifacts per node for its tier (node.md/tasks.md always; spec/detail/drawio/signatures
      per the agreed set) — ⏸ nodes are exempt: they only need `node.md` with a `[deferred: …]` line;

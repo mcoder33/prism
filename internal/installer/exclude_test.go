@@ -98,16 +98,17 @@ func TestAddToGitExcludeAppendsMissingNewline(t *testing.T) {
 	}
 }
 
-func TestInstallCommandSingleFile(t *testing.T) {
+func TestInstallWorkflowSingleFile(t *testing.T) {
 	root := t.TempDir()
 	w := firstWorkflow(t)
-	rel, err := InstallCommand(root, adapters.Claude, w)
+	files, err := InstallWorkflow(root, adapters.Claude, adapters.Commands, w)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rel != adapters.Claude.CommandFile(w.ID) {
-		t.Fatalf("rel = %q", rel)
+	if len(files) != 1 || files[0] != adapters.Claude.CommandFile(w.ID) {
+		t.Fatalf("files = %q", files)
 	}
+	rel := files[0]
 	if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
 		t.Fatal(err)
 	}

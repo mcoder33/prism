@@ -26,7 +26,7 @@ func TestInstallToolAndDetectBack(t *testing.T) {
 	if _, err := InstallShared(root); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := InstallTool(root, adapters.Claude); err != nil {
+	if _, err := InstallTool(root, adapters.Claude, ""); err != nil {
 		t.Fatal(err)
 	}
 

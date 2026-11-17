@@ -1,6 +1,6 @@
 Brings ONE part to "atomic" and generates its artifacts. Argument: `<NN-name>`.
 
-**Read first**: `.prism/conventions.md` (if missing, run `prism update`).
+**Read first**: {{conventions}} (if missing, run `prism update`).
 
 ## Preconditions (check, don't assume)
 
@@ -39,6 +39,13 @@ Brings ONE part to "atomic" and generates its artifacts. Argument: `<NN-name>`.
    - `concept.drawio` — diagram; **mandatory** validation (see conventions, drawio).
    - `signatures.md` — code sketch: signatures + what/why comments (no implementation).
    - `tasks.md` — checklist `- [ ]`.
+   **Simplest complete design**: every mechanism the artifacts add beyond the direct path — a
+   layer, interface, config knob, fallback, cache, retry, own parser — names the requirement or
+   concrete failure that breaks without it (a `spec.md` scenario, a `proposal.md` invariant, a
+   reproducible defect). "Might be useful later" doesn't qualify: drop it. Don't strip existing
+   safeguards for minimalism — find out what they guarantee first.
+   Validate the node (see conventions, drawio — `prism check` also checks spec scenarios and
+   Open tags) and fix what it reports before the flip below.
 5. Mark the node 🟢 in `README.md`. Print a one-line summary per artifact + the full `tasks.md`
    inline, report the next candidates, and **end your turn** — do NOT drill another part
    (low cognitive load: one node at a time).

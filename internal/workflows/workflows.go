@@ -10,7 +10,7 @@ import (
 
 // Version of the prism CLI; stamped into every generated file.
 // Overridable at build time: -ldflags "-X .../internal/workflows.Version=x.y.z".
-var Version = "0.7.0"
+var Version = "0.8.0"
 
 // Workflow is one prism command installed into agents as a slash command.
 type Workflow struct {
@@ -63,17 +63,18 @@ var All = []Workflow{
 	{
 		ID:    "apply",
 		Title: "PRISM: Apply",
-		Description: "Implement the change in code per the tasks, in dependency order, " +
-			"marking tasks done and running checks.",
+		Description: "Implement the change in code per the tasks, in dependency order (or the " +
+			"ready frontier in parallel worktrees with --parallel), one commit per part, marking " +
+			"tasks done and running checks.",
 	},
 	{
 		ID:    "verify",
 		Title: "PRISM: Verify",
-		Description: "Thorough post-implementation verification on a running dev environment — " +
-			"full test suite, blocking static checks, diff-driven functional and browser smoke, " +
-			"targeted concurrency/parallelism checks, load corner-cases, ability to fix findings " +
-			"and re-verify, final report with recommendations. Project-agnostic: commands and " +
-			"entry points are detected from repository configs.",
+		Description: "Post-implementation verification on a running dev environment at a chosen " +
+			"depth (--checks low|high) — full test suite, blocking static checks, diff-driven " +
+			"functional and browser smoke, concurrency checks, load corner-cases at high, an " +
+			"independent design-conformance review, fixes with re-verification, and a final " +
+			"report. Project-agnostic: commands and entry points are detected from repository configs.",
 	},
 	{
 		ID:          "archive",

@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.8.0 — 2026-11-17
+
+Distribution and determinism release. Agent Skills became the cross-tool standard (OpenSpec
+2.0 went skills-only; Codex deprecated custom prompts), so prism now ships as skills too. Checks
+the agent used to do by reading Markdown move into the CLI. Methodology changes are informed by
+a survey of mcoder33/codex-skills (`effort`/`checks`, `nasa`, unresolved-forks), OpenSpec 2.x
+and mattpocock/skills (`implement-spec`, `grilling`).
+
+### Fixed
+
+- **Codex CLI support.** prism ≤ 0.7 wrote `.codex/prompts/prism-*.md` into the project, but
+  Codex only ever read prompts from `~/.codex/prompts/` and has since deprecated them — the
+  commands never loaded. Codex is now skills-only (`.agents/skills/prism-*/`, invoked as
+  `$prism-<name>`, implicit invocation disabled via `agents/openai.yaml`); `prism update`
+  migrates and removes the old files.
+
+### Added
+
+- **Skills delivery** (`--delivery skills` on `init`/`update`, `d` in the TUI): one Agent Skills
+  folder per workflow with a bundled `references/conventions.md`, so committed skills work on a
+  fresh clone without the CLI. Claude Code, Cursor, Codex, Gemini CLI, Copilot, OpenCode,
+  Roo Code and Cline. Commands stay the default where a tool has them.
+- **`prism update --delivery`** switches delivery; the other delivery's and legacy generated
+  files are removed (stamp-checked — hand-written files are kept). `doctor` reports delivery and
+  leftover layouts.
+- **`prism status [--json]`** — the change's state table parsed and cross-checked against the
+  node files: status mismatches, rows without dirs and vice versa, missing mandatory artifacts,
+  untagged Opens, unchecked tasks on applied nodes, branch mismatch. The `status` workflow
+  starts from it.
+- **`prism check [--json]`** — artifact validation, exit 1 on errors: well-formed drawio XML
+  (xmllint is no longer needed), WHEN/THEN in every spec Scenario, atomicity bounds (spec ≤ ~3
+  Requirements, tasks ≤ ~12 boxes), plus the status findings. `drill` and `apply` run it.
+  The shipped worked example is checked in CI.
+- **`verify --checks low|high`** — evidence depth independent of implementation size; default
+  `low` for small-tier changes, `high` otherwise.
+- **Independent design-conformance review** in `verify`: run by a fresh-context subagent when
+  the agent supports one, otherwise labelled `self-review`.
+- **`apply --parallel`** (opt-in, standard tier): the ready frontier of parts implemented by
+  fresh-context subagents in separate worktrees, merged one at a time, flipped 🔵 only once on
+  the feature branch.
+- **Forecast** line written by `apply` before the first part; `archive`'s mini-retro compares
+  it with the actual diff to calibrate the atomicity bounds.
+
+### Changed
+
+- **Closing a fork** (conventions, Open tags): a `[blocking]` Open closes only on a chosen
+  outcome for the whole affected scope — "decide during testing", an owner, a deadline or
+  equal-cost options don't close it.
+- **Simplest complete design** in `drill`: every mechanism beyond the direct path names the
+  requirement or concrete failure that needs it.
+- `propose` grill: questions are worded so "yes" accepts the recommended answer.
+- `conventions.md` trimmed to stay inside its byte budget: archive sharing and active-change
+  handoff moved into `archive` and `use`.
+- Templates reference conventions through `{{conventions}}`; lint rejects hardcoded paths and
+  unknown placeholders.
+
 ## 0.7.0 — 2026-07-17
 
 Methodology sharpening release: split heuristics, escape hatches for stuck decisions, and a
